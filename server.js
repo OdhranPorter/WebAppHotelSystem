@@ -24,6 +24,11 @@ app.get('/css/:file', (req, res) => {
     res.sendFile(path.join(__dirname, 'secure/css', req.params.file));
 });
 
+// Serve image files securely
+app.get('/images/:file', (req, res) => {
+    res.sendFile(path.join(__dirname, 'secure/images', req.params.file));
+});
+
 // Start server
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
