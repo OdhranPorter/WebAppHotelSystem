@@ -54,7 +54,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   if (logoutBtn) {
     logoutBtn.addEventListener("click", async () => {
       await signOut(auth);
-      window.location.href = "rooms.html";
+      window.location.href = "rooms";
     });
   }
 
@@ -123,7 +123,7 @@ document.addEventListener("DOMContentLoaded", async () => {
       const bookBtn = card.querySelector("button");
       bookBtn.addEventListener("click", () => {
         // Navigate to booking or pass roomId param
-        window.location.href = "booking.html?roomId=" + roomId;
+        window.location.href = "booking?roomId=" + roomId;
       });
 
       roomsContainer.appendChild(card);
@@ -162,8 +162,8 @@ function getAmenityIcon(amenity) {
   bookNowBtn.addEventListener("click", () => {
     const roomId = "R101"; // or retrieve dynamically
     if (!auth.currentUser) {
-      window.location.href = "login.html?from=booking.html?roomId=" + roomId;
+      window.location.href = "login?from=booking?roomId=" + roomId;
     } else {
-      window.location.href = "booking.html?roomId=" + roomId;
+      window.location.href = "booking?roomId=" + roomId;
     }
   });

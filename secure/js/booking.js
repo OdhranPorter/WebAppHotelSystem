@@ -97,7 +97,7 @@ import {
   onAuthStateChanged(auth, async (user) => {
     if (!user) {
       // Not logged in => redirect
-      window.location.href = `login.html?from=booking.html?roomId=${roomId}`;
+      window.location.href = `login?from=booking?roomId=${roomId}`;
       return;
     }
   
@@ -170,7 +170,7 @@ import {
   
         alert(`Booking ${bookingIdStr} created successfully!`);
         // Possibly redirect to a "Booking Confirmation" page
-        window.location.href = "home.html";
+        window.location.href = "home";
       } catch (err) {
         console.error("Error creating booking:", err);
         alert(`Error: ${err.message}`);

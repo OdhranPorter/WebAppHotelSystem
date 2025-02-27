@@ -53,7 +53,7 @@ document.addEventListener("DOMContentLoaded", () => {
     logoutBtn.addEventListener("click", async () => {
       await signOut(auth);
       // Optionally reload or go to home
-      window.location.href = "home.html";
+      window.location.href = "home";
     });
   }
 
@@ -63,9 +63,9 @@ document.addEventListener("DOMContentLoaded", () => {
       // If user is logged in => go to rooms
       // else => go to login?from=rooms.html
       if (auth.currentUser) {
-        window.location.href = "rooms.html";
+        window.location.href = "rooms";
       } else {
-        window.location.href = "login.html?from=rooms.html";
+        window.location.href = "login?from=rooms";
       }
     });
   }
@@ -74,7 +74,7 @@ document.addEventListener("DOMContentLoaded", () => {
   if (heroLoginBtn) {
     heroLoginBtn.addEventListener("click", () => {
       // Possibly pass ?from=home
-      window.location.href = "login.html?from=home.html";
+      window.location.href = "login?from=home";
     });
   }
 

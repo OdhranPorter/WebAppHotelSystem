@@ -51,20 +51,20 @@ import {
   onAuthStateChanged(auth, async (user) => {
     if (!user) {
       // Not logged in => redirect
-      window.location.href = "login.html?from=employee.html";
+      window.location.href = "login?from=employee";
       return;
     }
     // Check if user has "Employee" doc => if role===employee OR role===admin => allowed
     const empSnap = await getDoc(doc(db, "Employee", user.uid));
     if (!empSnap.exists()) {
       alert("Access denied - not an Employee");
-      window.location.href = "home.html";
+      window.location.href = "home";
       return;
     }
     const empData = empSnap.data();
     if (empData.role !== "employee" && empData.role !== "admin") {
       alert("Access denied - not an Employee or Admin");
-      window.location.href = "home.html";
+      window.location.href = "home";
       return;
     }
   
@@ -88,7 +88,7 @@ import {
   if (logoutBtn) {
     logoutBtn.addEventListener("click", async () => {
       await signOut(auth);
-      window.location.href = "home.html";
+      window.location.href = "home";
     });
   }
   

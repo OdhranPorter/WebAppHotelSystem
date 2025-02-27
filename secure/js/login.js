@@ -57,10 +57,10 @@ import {
           const empData = empSnap.data();
           if (empData.role === "admin") {
             // Admin user
-            window.location.href = "admin.html";
+            window.location.href = "admin";
           } else {
             // Regular employee
-            window.location.href = "employee.html";
+            window.location.href = "employee";
           }
         } else {
           // Not in Employee => treat as Guest
@@ -69,7 +69,7 @@ import {
             window.location.href = fromPage;
           } else {
             // Otherwise default to home.html
-            window.location.href = "home.html";
+            window.location.href = "home";
           }
         }
       } catch (err) {
