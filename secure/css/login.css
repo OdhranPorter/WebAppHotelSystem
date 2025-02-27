@@ -1,0 +1,33 @@
+/* login.css */
+
+/* Basic layout for side-by-side login & register boxes */
+body {
+    font-family: Arial, sans-serif;
+    display: flex;
+    justify-content: space-around;
+    margin: 2rem;
+  }
+  
+  .container {
+    border: 1px solid #ccc;
+    padding: 2rem;
+    width: 400px;
+    border-radius: 5px;
+  }
+  
+  h2 {
+    margin-bottom: 1rem;
+  }
+  
+  form input {
+    display: block;
+    margin-bottom: 1rem;
+    width: 100%;
+    padding: 0.5rem;
+  }
+  
+  button {
+    padding: 0.6rem 1rem;
+    cursor: pointer;
+  }
+  

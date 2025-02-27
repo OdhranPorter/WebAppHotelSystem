@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Hotel Home</title>
+  <!-- Link to the external CSS file -->
+  <link rel="stylesheet" href="css/home.css" />
+</head>
+<body>
+  <!-- Header with Logo & Navigation -->
+  <header>
+    <div class="logo">
+      <img src="images/logo.png" alt="Hotel Logo" />
+      <h2>MyHotel</h2>
+    </div>
+    <nav style="display: flex; align-items: center;">
+      <!-- Left side: existing links -->
+      <div>
+        <a href="home.html">Home</a>
+        <a href="rooms.html">Rooms</a>
+      </div>
+      <!-- Right side: Account or Login -->
+      <div style="margin-left: 2rem; display: flex; align-items: center;">
+        <!-- Account dropdown (shown if user is logged in) -->
+        <div id="accountDropdown" style="display: none; position: relative;">
+          <button id="accountBtn" style="background: #555; color: #fff; padding: 0.5rem 1rem; border: none; margin-left: 1rem;">
+            Account
+          </button>
+          <div id="accountMenu"
+               style="position: absolute; top: 2.5rem; right: 0; background-color: #fff; color: #333;
+                      padding: 0.5rem; display: none; box-shadow: 0 2px 5px rgba(0,0,0,0.3);">
+            <a href="profile.html" style="display: block; padding: 0.5rem 1rem; color: #333; text-decoration: none;">
+              Profile
+            </a>
+            <button id="logoutBtn"
+                    style="display: block; width: 100%; text-align: left; padding: 0.5rem 1rem; border: none; background: none; cursor: pointer;">
+              Logout
+            </button>
+          </div>
+        </div>
+        <!-- Login link (shown if user is NOT logged in) -->
+        <a id="loginBtn" href="login.html" style="margin-left: 1rem;">Login</a>
+      </div>
+    </nav>
+  </header>
+
+  <!-- Hero Section with Carousel and Text Overlay -->
+  <section class="hero">
+    <!-- The background carousel slides -->
+    <div class="carousel">
+      <!-- Replace 'image1.jpg', 'image2.jpg', etc. with your actual images -->
+      <div class="slide" style="background-image: url('images/hotel_banner.jpg');"></div>
+      <div class="slide" style="background-image: url('images/deluxe.jpg');"></div>
+      <div class="slide" style="background-image: url('images/standard.jpg');"></div>
+    </div>
+
+    <!-- Hero text/content on top of the carousel -->
+    <div class="hero-content">
+      <h1>Welcome to MyHotel</h1>
+      <p>Experience luxury and comfort in the heart of the city.</p>
+      <div class="hero-buttons">
+        <button class="login-btn" id="loginButton">Login</button>
+        <button class="book-btn" id="bookButton">Book Now</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- Optional Main Content -->
+  <main>
+    <h2>Our Featured Rooms</h2>
+    <p>Discover a wide range of rooms to suit your preferences.</p>
+    <div class="room-features">
+      <div class="feature-card" >
+        <img src="images/deluxe.jpg" alt="Room 1" />
+        <h3>Deluxe Room</h3>
+        <p>A spacious suite with city views and premium amenities.</p>
+      </div>
+      <div class="feature-card">
+        <img src="images/standard.jpg" alt="Room 2" />
+        <h3>Standard Room</h3>
+        <p>A comfortable option for travelers on a budget.</p>
+      </div>
+      <div class="feature-card">
+        <img src="images/family.jpg" alt="Room 3" />
+        <h3>Family Room</h3>
+        <p>A roomy option for families.</p>
+      </div>
+      <div class="feature-card">
+        <img src="images/suite.jpg" alt="Room 3" />
+        <h3>Suite Room</h3>
+        <p>A roomy option for families.</p>
+      </div>
+    </div>
+  </main>
+
+  <!-- Footer -->
+  <footer>
+    <p>© 2025 MyHotel. All rights reserved.</p>
+  </footer>
+
+  <!-- Link to the external JS file -->
+  <script type="module" src="js/home.js"></script>
+</body>
+</html>

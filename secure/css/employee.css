@@ -1,0 +1,117 @@
+/* employee.css */
+
+/* Reset */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+  }
+  
+  body {
+    font-family: Arial, sans-serif;
+    background-color: #f5f5f5;
+  }
+  
+  /* Header nav */
+  header {
+    background-color: #333;
+    color: #fff;
+    padding: 1rem;
+  }
+  header nav a {
+    color: #fff;
+    text-decoration: none;
+    margin-right: 20px;
+  }
+  header nav a:hover {
+    text-decoration: underline;
+  }
+  
+  /* Main area */
+  main {
+    padding: 2rem;
+  }
+  h1 {
+    margin-bottom: 1rem;
+  }
+  
+  /* Container layout */
+  .employee-container {
+    max-width: 900px;
+    margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+    gap: 2rem;
+  }
+  
+  .employee-section {
+    background-color: #fff;
+    padding: 1rem;
+    border-radius: 5px;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+  }
+  .employee-section h2 {
+    margin-top: 0;
+    margin-bottom: 1rem;
+  }
+  
+  /* Create Room Form */
+  #createRoomForm input {
+    display: block;
+    width: 100%;
+    margin-bottom: 1rem;
+    padding: 0.5rem;
+  }
+  #createRoomForm button {
+    padding: 0.5rem 1rem;
+    cursor: pointer;
+    background-color: #e6b800;
+    color: #fff;
+    border: none;
+    border-radius: 5px;
+  }
+  #createRoomForm button:hover {
+    opacity: 0.9;
+  }
+  
+  /* Tables */
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 2rem;
+  }
+  table thead tr {
+    background-color: #333;
+    color: #fff;
+  }
+  table thead th {
+    padding: 0.5rem;
+  }
+  table tbody tr:nth-child(even) {
+    background-color: #f9f9f9;
+  }
+  table tbody td {
+    border: 1px solid #ddd;
+    padding: 0.5rem;
+  }
+  
+  /* Action buttons */
+  .action-btn {
+    padding: 0.3rem 0.5rem;
+    margin-right: 0.5rem;
+    cursor: pointer;
+    border: none;
+    border-radius: 3px;
+    color: #fff;
+  }
+  .action-btn.edit {
+    background-color: #555;
+  }
+  .action-btn.delete {
+    background-color: #d9534f;
+  }
+  .action-btn.edit:hover,
+  .action-btn.delete:hover {
+    opacity: 0.8;
+  }
+  
