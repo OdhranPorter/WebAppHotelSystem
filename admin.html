@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Admin Dashboard</title>
+  <!-- Link to admin CSS -->
+  <link rel="stylesheet" href="/css/admin.css" />
+</head>
+<body>
+  <header>
+    <nav style="display: flex; align-items: center; justify-content: space-between;">
+      <!-- Left side or site nav if you want -->
+      <div>
+        <a href="home">Home</a>
+        <a href="rooms">Rooms</a>
+      </div>
+      <!-- Right side: Account / Login -->
+      <div style="display: flex; align-items: center;">
+        <div id="accountDropdown" style="display: none; position: relative;">
+          <button id="accountBtn" style="background: #555; color: #fff; padding: 0.5rem 1rem; border: none;">
+            Account
+          </button>
+          <div id="accountMenu"
+               style="position: absolute; top: 2.5rem; right: 0; background-color: #fff; color: #333;
+                      padding: 0.5rem; display: none; box-shadow: 0 2px 5px rgba(0,0,0,0.3);">
+            <button id="logoutBtn"
+                    style="display: block; width: 100%; text-align: left; padding: 0.5rem 1rem; border: none; background: none; cursor: pointer;">
+              Logout
+            </button>
+          </div>
+        </div>
+        <a id="loginBtn" href="login" style="margin-left: 1rem;">Login</a>
+      </div>
+    </nav>
+  </header>
+
+  <main>
+    <h1>Admin Dashboard</h1>
+
+    <!-- Single container with new-employee form on top, then employees list, then guests list -->
+    <div class="admin-single-column">
+
+      <!-- Register new Employee -->
+      <section class="admin-section">
+        <h2>Register New Employee</h2>
+        <form id="registerEmployeeForm">
+          <input type="text" id="emp-name" placeholder="Name" required />
+          <input type="tel" id="emp-phone" placeholder="Phone" required />
+          <input type="email" id="emp-email" placeholder="Email" required />
+          <input type="password" id="emp-password" placeholder="Password" required />
+          <input type="text" id="emp-role" placeholder="Role" value="employee" required />
+          <button type="submit">Create Employee</button>
+        </form>
+      </section>
+
+      <!-- Employees table -->
+      <section class="admin-section">
+        <h2>All Employees (excluding Admins)</h2>
+        <table id="employeeTable">
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th>Email</th>
+              <th>Phone</th>
+              <th>Role</th>
+              <th>empId</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            <!-- Dynamically loaded by admin.js -->
+          </tbody>
+        </table>
+      </section>
+
+      <!-- Guests table -->
+      <section class="admin-section">
+        <h2>All Guests</h2>
+        <table id="guestTable">
+          <thead>
+            <tr>
+              <th>First Name</th>
+              <th>Last Name</th>
+              <th>Email</th>
+              <th>Phone</th>
+            </tr>
+          </thead>
+          <tbody>
+            <!-- Dynamically loaded by admin.js -->
+          </tbody>
+        </table>
+      </section>
+
+    </div>
+  </main>
+
+  <!-- Link to admin.js -->
+  <script type="module" src="/js/admin.js"></script>
+</body>
+</html>

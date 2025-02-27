@@ -30,8 +30,10 @@ app.get('/images/:file', (req, res) => {
 });
 
 // Start server
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+const server = app.listen(0, () => {
+    const assignedPort = server.address().port;
+    console.log(`Server running at http://localhost:${assignedPort}/home`);
+});
 
 const admin = require('firebase-admin');
 const serviceAccount = require('./serviceAccountKey.json');

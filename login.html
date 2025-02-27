@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Login & Register</title>
+  <!-- Link to external CSS file -->
+  <link rel="stylesheet" href="css/login.css" />
+</head>
+<body>
+  <!-- Login Container -->
+  <div class="container">
+    <h2>Login</h2>
+    <form id="loginForm">
+      <input type="email" id="loginEmail" placeholder="Email" required />
+      <input type="password" id="loginPassword" placeholder="Password" required />
+      <button type="submit">Login</button>
+    </form>
+  </div>
+
+  <!-- Register Container (for guests) -->
+  <div class="container">
+    <h2>Register (Guest)</h2>
+    <form id="registerForm">
+      <input type="text" id="reg-fName" placeholder="First Name" required />
+      <input type="text" id="reg-sName" placeholder="Last Name" required />
+      <input type="email" id="reg-email" placeholder="Email" required />
+      <input type="tel" id="reg-phone" placeholder="Phone" required />
+      <input type="password" id="reg-password" placeholder="Password" required />
+      <!-- If you always want to register guests, you can omit or hide this role input. -->
+      <input type="text" id="reg-role" placeholder="Role" value="guest" />
+      <button type="submit">Register</button>
+    </form>
+  </div>
+
+  <!-- Script that handles login, register, and redirects -->
+  <script type="module" src="js/login.js"></script>
+</body>
+</html>
