@@ -1,0 +1,41 @@
+<!-- File: index-employees.html -->
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Manage Employees</title>
+  <script type="module" src="js/populate-employees.js"></script>
+</head>
+<body>
+  <h1>Employee Management</h1>
+  
+  <form id="employeeForm">
+    <input type="text" id="emp-name" placeholder="Name" required />
+    <input type="tel" id="emp-phone" placeholder="Phone" required />
+    <input type="email" id="emp-email" placeholder="Email" required />
+    <input type="password" id="emp-password" placeholder="Password" required />
+    <input type="text" id="emp-role" placeholder="Role" required />
+    <button type="submit">Register Employee</button>
+  </form>
+
+  <hr />
+
+  <table id="employeeTable" border="1">
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Phone</th>
+        <th>Email</th>
+        <th>Role</th>
+        <th>Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      <!-- Populated by populate-employees.js -->
+    </tbody>
+  </table>
+
+  <br />
+  <a href="index.html">Back to Dashboard</a>
+</body>
+</html>
+    
