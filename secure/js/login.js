@@ -57,10 +57,10 @@ import {
           const empData = empSnap.data();
           if (empData.role === "admin") {
             // Admin user
-            window.location.href = "admin";
+            window.location.href = "admin.html";
           } else {
             // Regular employee
-            window.location.href = "employee";
+            window.location.href = "employee.html";
           }
         } else {
           // Not in Employee => treat as Guest
@@ -69,7 +69,7 @@ import {
             window.location.href = fromPage;
           } else {
             // Otherwise default to home.html
-            window.location.href = "home";
+            window.location.href = "home.html";
           }
         }
       } catch (err) {
@@ -90,7 +90,7 @@ import {
       const email = document.getElementById("reg-email").value.trim();
       const phone = document.getElementById("reg-phone").value.trim();
       const password = document.getElementById("reg-password").value.trim();
-      const role = document.getElementById("reg-role").value.trim(); // likely "guest"
+      const role = "guest" // likely "guest"
   
       try {
         // 1) Create user in Firebase Auth
