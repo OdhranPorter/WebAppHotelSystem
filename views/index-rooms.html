@@ -1,0 +1,39 @@
+<!-- File: index-rooms.html -->
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Manage Rooms</title>
+  <script type="module" src="js/populate-rooms.js"></script>
+</head>
+<body>
+  <h1>Room Management</h1>
+
+  <form id="roomForm">
+    <input type="text" id="room-id" placeholder="Room ID (e.g. R101)" required />
+    <input type="text" id="room-type" placeholder="Room Type (e.g. Deluxe)" required />
+    <input type="number" id="room-price" placeholder="Price per night" required />
+    <input type="text" id="room-amenities" placeholder="Amenities (comma separated)" />
+    <button type="submit">Create Room</button>
+  </form>
+
+  <hr />
+
+  <table id="roomTable" border="1">
+    <thead>
+      <tr>
+        <th>ID</th>
+        <th>Type</th>
+        <th>Price</th>
+        <th>Amenities</th>
+        <th>Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      <!-- Populated by populate-rooms.js -->
+    </tbody>
+  </table>
+
+  <br />
+  <a href="index.html">Back to Dashboard</a>
+</body>
+</html>
