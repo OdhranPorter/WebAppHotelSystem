@@ -1,4 +1,10 @@
 /***************************************************
+ * GLOBAL VARIABLES FOR EDITING
+ ***************************************************/
+let currentDocId = null;
+let currentItemType = null;
+
+/***************************************************
  * 1. IMPORTS & FIREBASE CONFIG
  ***************************************************/
 import {
@@ -26,7 +32,7 @@ import {
   arrayRemove
 } from "https://www.gstatic.com/firebasejs/11.3.0/firebase-firestore.js";
 
-// REPLACE with your actual config or keep consistent with booking.js:
+// REPLACE with your actual config
 const firebaseConfig = {
   apiKey: "AIzaSyDw5aeA0uwE7R06Ht1wjkx6TcehPWs0Hac",
   authDomain: "hotel-booking-3aad3.firebaseapp.com",
@@ -43,7 +49,6 @@ const db = getFirestore(app);
 /***************************************************
  * HELPER: GENERATE DATE RANGE
  ***************************************************/
-// Creates an array of date strings YYYY-MM-DD from start to end inclusive.
 function generateDateRange(startDate, endDate) {
   const dates = [];
   let current = new Date(startDate);
@@ -130,7 +135,6 @@ async function createRoom(roomId, type, price, amenitiesString) {
       .split(",")
       .map(a => a.trim())
       .filter(a => a !== "");
-
     await setDoc(doc(db, "Room", roomId), {
       id: roomId,
       type,
@@ -148,7 +152,6 @@ async function createRoom(roomId, type, price, amenitiesString) {
 /***************************************************
  * 3b. CREATE BOOKING (NEW)
  ***************************************************/
-// We'll keep a separate "bookingCounter" doc in "Counters/bookingCounter" for auto-increment
 async function getNextBookingId() {
   const counterRef = doc(db, "Counters", "bookingCounter");
   return runTransaction(db, async (transaction) => {
@@ -167,20 +170,15 @@ async function getNextBookingId() {
 
 async function createBooking(roomId, guestId, checkInStr, checkOutStr) {
   const startDate = new Date(checkInStr);
-  const endDate   = new Date(checkOutStr);
-
+  const endDate = new Date(checkOutStr);
   if (isNaN(startDate) || isNaN(endDate)) {
     throw new Error("Invalid check-in or check-out date.");
   }
   if (startDate > endDate) {
     throw new Error("Check-out must be after check-in date.");
   }
-
-  // 1) Get the new booking number
   const bookingNum = await getNextBookingId();
   const bookingIdStr = `B${bookingNum}`;
-
-  // 2) Store the booking doc
   await setDoc(doc(db, "Booking", bookingIdStr), {
     bookID: bookingIdStr,
     guestID: guestId,
@@ -189,23 +187,16 @@ async function createBooking(roomId, guestId, checkInStr, checkOutStr) {
     checkOutDate: checkOutStr,
     status: "pending"
   });
-
-  // 3) Mark these dates as booked in the room
   const allDates = generateDateRange(startDate, endDate);
   await updateDoc(doc(db, "Room", roomId), {
     bookedDates: arrayUnion(...allDates)
   });
-
   alert(`Booking ${bookingIdStr} created successfully!`);
 }
 
 /***************************************************
  * 6. DELETE & HELPER FUNCTIONS
  ***************************************************/
-
-/**
- * Delete all Bookings that reference a specific Guest UID.
- */
 async function deleteBookingsForGuest(guestUid) {
   const bookingsRef = collection(db, "Booking");
   const q = query(bookingsRef, where("guestID", "==", guestUid));
@@ -215,9 +206,6 @@ async function deleteBookingsForGuest(guestUid) {
   }
 }
 
-/**
- * Delete all Bookings referencing a specific Employee UID (if stored).
- */
 async function deleteBookingsForEmployeeUid(employeeUid) {
   const bookingsRef = collection(db, "Booking");
   const q = query(bookingsRef, where("employeeID", "==", employeeUid));
@@ -227,9 +215,6 @@ async function deleteBookingsForEmployeeUid(employeeUid) {
   }
 }
 
-/**
- * Delete all Bookings referencing a specific Room ID.
- */
 async function deleteBookingsForRoom(roomId) {
   const bookingsRef = collection(db, "Booking");
   const q = query(bookingsRef, where("roomID", "==", roomId));
@@ -239,15 +224,11 @@ async function deleteBookingsForRoom(roomId) {
   }
 }
 
-/**
- * Delete an Employee doc by searching for "empId" in Firestore.
- */
 async function deleteEmployeeByEmpId(empIdStr) {
   const empIdNum = parseInt(empIdStr);
   if (isNaN(empIdNum)) {
     throw new Error("empId must be a valid integer");
   }
-
   const employeesRef = collection(db, "Employee");
   const q = query(employeesRef, where("empId", "==", empIdNum));
   const snap = await getDocs(q);
@@ -260,21 +241,16 @@ async function deleteEmployeeByEmpId(empIdStr) {
   }
 }
 
-// NEW: Helper to remove booking’s dates from the associated room
 async function removeBookingDatesFromRoom(bookingDoc) {
   const bookingData = bookingDoc.data();
   if (!bookingData) return;
-
-  const roomId     = bookingData.roomID;
+  const roomId = bookingData.roomID;
   const checkInStr = bookingData.checkInDate;
-  const checkOutStr= bookingData.checkOutDate;
-
+  const checkOutStr = bookingData.checkOutDate;
   const startDate = new Date(checkInStr);
-  const endDate   = new Date(checkOutStr);
+  const endDate = new Date(checkOutStr);
   if (isNaN(startDate) || isNaN(endDate)) return;
-
-  const allDates  = generateDateRange(startDate, endDate);
-  // Remove from Room's bookedDates
+  const allDates = generateDateRange(startDate, endDate);
   await updateDoc(doc(db, "Room", roomId), {
     bookedDates: arrayRemove(...allDates)
   });
@@ -287,45 +263,37 @@ async function deleteItem(itemType, itemId) {
   if (!itemId) {
     throw new Error("No ID provided for deletion");
   }
-
   switch (itemType) {
     case "guestUid": {
-      // Guest doc
       await deleteDoc(doc(db, "Guest", itemId));
       await deleteBookingsForGuest(itemId);
       alert(`Deleted Guest UID=${itemId} + associated bookings`);
       break;
     }
     case "employeeUid": {
-      // Employee doc
       await deleteDoc(doc(db, "Employee", itemId));
       await deleteBookingsForEmployeeUid(itemId);
       alert(`Deleted Employee UID=${itemId} + associated bookings`);
       break;
     }
     case "employeeEmpId": {
-      // Employee by empId
       await deleteEmployeeByEmpId(itemId);
       alert(`Deleted Employee with empId=${itemId} + associated bookings`);
       break;
     }
     case "roomId": {
-      // Room doc
       await deleteDoc(doc(db, "Room", itemId));
       await deleteBookingsForRoom(itemId);
       alert(`Deleted Room ID=${itemId} + associated bookings`);
       break;
     }
-    // NEW: Delete Booking by bookingId
     case "bookingId": {
       const bookingRef = doc(db, "Booking", itemId);
       const bookingSnap = await getDoc(bookingRef);
       if (!bookingSnap.exists()) {
         throw new Error(`No Booking found with ID=${itemId}`);
       }
-      // Free the dates in the associated room
       await removeBookingDatesFromRoom(bookingSnap);
-      // Delete the booking doc
       await deleteDoc(bookingRef);
       alert(`Deleted Booking ${itemId} and freed those dates in Room`);
       break;
@@ -374,7 +342,7 @@ async function fetchItemForEdit(itemType, itemId) {
     }
     case "employeeEmpId": {
       const emp = await findEmployeeByEmpId(itemId);
-      return emp; // { docId, data }
+      return emp;
     }
     case "roomId": {
       const snap = await getDoc(doc(db, "Room", itemId));
@@ -383,7 +351,6 @@ async function fetchItemForEdit(itemType, itemId) {
       }
       return { docId: itemId, data: snap.data() };
     }
-    // NEW: bookingId
     case "bookingId": {
       const snap = await getDoc(doc(db, "Booking", itemId));
       if (!snap.exists()) {
@@ -399,22 +366,16 @@ async function fetchItemForEdit(itemType, itemId) {
 /***************************************************
  * 9b. EDIT BOOKING HELPER
  ***************************************************/
-// If user changes checkInDate, checkOutDate, or roomID, we must remove old booking
-// dates from the old room and add new booking dates to the new room.
 async function updateBookingDates(docId, oldData, newData) {
-  const oldRoomId     = oldData.roomID;
+  const oldRoomId = oldData.roomID;
   const oldCheckInStr = oldData.checkInDate;
-  const oldCheckOutStr= oldData.checkOutDate;
-
-  // If not provided, we use old data
-  const newRoomId     = newData.roomID || oldRoomId;
+  const oldCheckOutStr = oldData.checkOutDate;
+  const newRoomId = newData.roomID || oldRoomId;
   const newCheckInStr = newData.checkInDate || oldCheckInStr;
-  const newCheckOutStr= newData.checkOutDate || oldCheckOutStr;
-
-  // If anything changed in date range or room, remove the old range from the old room:
+  const newCheckOutStr = newData.checkOutDate || oldCheckOutStr;
   if (oldRoomId && oldCheckInStr && oldCheckOutStr) {
     const oldStart = new Date(oldCheckInStr);
-    const oldEnd   = new Date(oldCheckOutStr);
+    const oldEnd = new Date(oldCheckOutStr);
     if (!isNaN(oldStart) && !isNaN(oldEnd)) {
       const oldDates = generateDateRange(oldStart, oldEnd);
       await updateDoc(doc(db, "Room", oldRoomId), {
@@ -422,11 +383,9 @@ async function updateBookingDates(docId, oldData, newData) {
       });
     }
   }
-
-  // Then add the new range to the new room
   if (newRoomId && newCheckInStr && newCheckOutStr) {
     const newStart = new Date(newCheckInStr);
-    const newEnd   = new Date(newCheckOutStr);
+    const newEnd = new Date(newCheckOutStr);
     if (!isNaN(newStart) && !isNaN(newEnd)) {
       const newDates = generateDateRange(newStart, newEnd);
       await updateDoc(doc(db, "Room", newRoomId), {
@@ -452,28 +411,558 @@ async function updateItem(itemType, docId, newData) {
   } else {
     throw new Error("Cannot determine collection from itemType");
   }
-
   if (collectionName === "Booking") {
-    // 1) Get old booking data
     const docSnap = await getDoc(doc(db, "Booking", docId));
     if (!docSnap.exists()) {
       throw new Error(`No booking doc found with ID=${docId}`);
     }
     const oldData = docSnap.data();
-
-    // 2) If user changed the room or dates, we remove old date range from old room
-    //    and add the new date range to the new room
     await updateBookingDates(docId, oldData, newData);
-
-    // 3) Update the Booking doc itself
     await updateDoc(doc(db, "Booking", docId), newData);
     return;
   }
-
-  // Otherwise, for Guest / Employee / Room:
   const ref = doc(db, collectionName, docId);
   await updateDoc(ref, newData);
 }
+
+/***************************************************
+ * FUNCTION: INLINE EDIT GUEST ROW
+ ***************************************************/
+function inlineEditGuest(uid, guest, row) {
+  const attributes = ["email", "fName", "sName", "password", "phoneNum", "role"];
+  for (let i = 0; i < attributes.length; i++) {
+    const cell = row.cells[i];
+    const input = document.createElement("input");
+    input.type = "text";
+    input.value = guest[attributes[i]] || "";
+    cell.innerHTML = "";
+    cell.appendChild(input);
+  }
+  const actionsCell = row.cells[attributes.length];
+  actionsCell.innerHTML = "";
+  const saveBtn = document.createElement("button");
+  saveBtn.textContent = "Save";
+  saveBtn.addEventListener("click", async () => {
+    const newData = {};
+    for (let i = 0; i < attributes.length; i++) {
+      const cell = row.cells[i];
+      const input = cell.querySelector("input");
+      newData[attributes[i]] = input.value;
+    }
+    try {
+      await updateItem("guestUid", uid, newData);
+      alert("Guest updated successfully.");
+      loadGuests();
+    } catch (error) {
+      console.error("Error saving inline edit:", error);
+      alert("Error saving changes: " + error.message);
+    }
+  });
+  actionsCell.appendChild(saveBtn);
+  const cancelBtn = document.createElement("button");
+  cancelBtn.textContent = "Cancel";
+  cancelBtn.addEventListener("click", () => {
+    loadGuests();
+  });
+  actionsCell.appendChild(cancelBtn);
+}
+
+/***************************************************
+ * FUNCTION: LOAD GUESTS
+ ***************************************************/
+async function loadGuests() {
+  const guestListDiv = document.getElementById("guest-list");
+  guestListDiv.innerHTML = "";
+  try {
+    const querySnapshot = await getDocs(collection(db, "Guest"));
+    if (querySnapshot.empty) {
+      guestListDiv.innerHTML = "<p>No guests found.</p>";
+      return;
+    }
+    const table = document.createElement("table");
+    const thead = document.createElement("thead");
+    const headerRow = document.createElement("tr");
+    const headers = ["Email", "First Name", "Last Name", "Password", "Phone", "Role", "Actions"];
+    headers.forEach(text => {
+      const th = document.createElement("th");
+      th.textContent = text;
+      headerRow.appendChild(th);
+    });
+    thead.appendChild(headerRow);
+    table.appendChild(thead);
+    
+    const tbody = document.createElement("tbody");
+    querySnapshot.forEach(docSnap => {
+      const guest = docSnap.data();
+      const uid = docSnap.id;
+      const row = document.createElement("tr");
+      
+      const emailCell = document.createElement("td");
+      emailCell.textContent = guest.email;
+      row.appendChild(emailCell);
+      
+      const fNameCell = document.createElement("td");
+      fNameCell.textContent = guest.fName;
+      row.appendChild(fNameCell);
+      
+      const sNameCell = document.createElement("td");
+      sNameCell.textContent = guest.sName;
+      row.appendChild(sNameCell);
+      
+      const passwordCell = document.createElement("td");
+      passwordCell.textContent = guest.password;
+      row.appendChild(passwordCell);
+      
+      const phoneCell = document.createElement("td");
+      phoneCell.textContent = guest.phoneNum;
+      row.appendChild(phoneCell);
+      
+      const roleCell = document.createElement("td");
+      roleCell.textContent = guest.role;
+      row.appendChild(roleCell);
+      
+      const actionsCell = document.createElement("td");
+      const editBtn = document.createElement("button");
+      editBtn.textContent = "Edit";
+      editBtn.addEventListener("click", () => {
+        inlineEditGuest(uid, guest, row);
+      });
+      actionsCell.appendChild(editBtn);
+      const deleteBtn = document.createElement("button");
+      deleteBtn.textContent = "Delete";
+      deleteBtn.addEventListener("click", async () => {
+        if (confirm("Are you sure you want to delete this guest?")) {
+          try {
+            await deleteItem("guestUid", uid);
+            loadGuests();
+          } catch (error) {
+            console.error("Error deleting guest:", error);
+            alert("Error deleting guest: " + error.message);
+          }
+        }
+      });
+      actionsCell.appendChild(deleteBtn);
+      row.appendChild(actionsCell);
+      
+      tbody.appendChild(row);
+    });
+    table.appendChild(tbody);
+    guestListDiv.appendChild(table);
+  } catch (error) {
+    console.error("Error loading guests:", error);
+    guestListDiv.innerHTML = "<p>Error loading guest list.</p>";
+  }
+}
+
+/***************************************************
+ * FUNCTION: INLINE EDIT EMPLOYEE ROW
+ ***************************************************/
+function inlineEditEmployee(uid, employee, row) {
+  const attributes = ["email", "empId", "name", "password", "phone", "role"];
+  for (let i = 0; i < attributes.length; i++) {
+    const cell = row.cells[i];
+    const input = document.createElement("input");
+    input.type = "text";
+    input.value = employee[attributes[i]] || "";
+    cell.innerHTML = "";
+    cell.appendChild(input);
+  }
+  const actionsCell = row.cells[attributes.length];
+  actionsCell.innerHTML = "";
+  const saveBtn = document.createElement("button");
+  saveBtn.textContent = "Save";
+  saveBtn.addEventListener("click", async () => {
+    const newData = {};
+    for (let i = 0; i < attributes.length; i++) {
+      const cell = row.cells[i];
+      const input = cell.querySelector("input");
+      newData[attributes[i]] = input.value;
+    }
+    try {
+      await updateItem("employeeUid", uid, newData);
+      alert("Employee updated successfully.");
+      loadEmployees();
+    } catch (error) {
+      console.error("Error saving inline edit:", error);
+      alert("Error saving changes: " + error.message);
+    }
+  });
+  actionsCell.appendChild(saveBtn);
+  const cancelBtn = document.createElement("button");
+  cancelBtn.textContent = "Cancel";
+  cancelBtn.addEventListener("click", () => {
+    loadEmployees();
+  });
+  actionsCell.appendChild(cancelBtn);
+}
+
+/***************************************************
+ * FUNCTION: LOAD EMPLOYEES
+ ***************************************************/
+async function loadEmployees() {
+  const employeeListDiv = document.getElementById("employee-list");
+  employeeListDiv.innerHTML = "";
+  try {
+    const querySnapshot = await getDocs(collection(db, "Employee"));
+    if (querySnapshot.empty) {
+      employeeListDiv.innerHTML = "<p>No employees found.</p>";
+      return;
+    }
+    const table = document.createElement("table");
+    const thead = document.createElement("thead");
+    const headerRow = document.createElement("tr");
+    const headers = ["Email", "empId", "Name", "Password", "Phone", "Role", "Actions"];
+    headers.forEach(text => {
+      const th = document.createElement("th");
+      th.textContent = text;
+      headerRow.appendChild(th);
+    });
+    thead.appendChild(headerRow);
+    table.appendChild(thead);
+    
+    const tbody = document.createElement("tbody");
+    querySnapshot.forEach(docSnap => {
+      const employee = docSnap.data();
+      const uid = docSnap.id;
+      const row = document.createElement("tr");
+      
+      const emailCell = document.createElement("td");
+      emailCell.textContent = employee.email;
+      row.appendChild(emailCell);
+      
+      const empIdCell = document.createElement("td");
+      empIdCell.textContent = employee.empId;
+      row.appendChild(empIdCell);
+      
+      const nameCell = document.createElement("td");
+      nameCell.textContent = employee.name;
+      row.appendChild(nameCell);
+      
+      const passwordCell = document.createElement("td");
+      passwordCell.textContent = employee.password;
+      row.appendChild(passwordCell);
+      
+      const phoneCell = document.createElement("td");
+      phoneCell.textContent = employee.phone;
+      row.appendChild(phoneCell);
+      
+      const roleCell = document.createElement("td");
+      roleCell.textContent = employee.role;
+      row.appendChild(roleCell);
+      
+      const actionsCell = document.createElement("td");
+      const editBtn = document.createElement("button");
+      editBtn.textContent = "Edit";
+      editBtn.addEventListener("click", () => {
+        inlineEditEmployee(uid, employee, row);
+      });
+      actionsCell.appendChild(editBtn);
+      const deleteBtn = document.createElement("button");
+      deleteBtn.textContent = "Delete";
+      deleteBtn.addEventListener("click", async () => {
+        if (confirm("Are you sure you want to delete this employee?")) {
+          try {
+            await deleteItem("employeeUid", uid);
+            loadEmployees();
+          } catch (error) {
+            console.error("Error deleting employee:", error);
+            alert("Error deleting employee: " + error.message);
+          }
+        }
+      });
+      actionsCell.appendChild(deleteBtn);
+      row.appendChild(actionsCell);
+      tbody.appendChild(row);
+    });
+    table.appendChild(tbody);
+    employeeListDiv.appendChild(table);
+  } catch (error) {
+    console.error("Error loading employees:", error);
+    employeeListDiv.innerHTML = "<p>Error loading employee list.</p>";
+  }
+}
+
+/***************************************************
+ * FUNCTION: INLINE EDIT ROOM ROW
+ * Converts a room row into input boxes for inline editing.
+ ***************************************************/
+function inlineEditRoom(roomId, room, row) {
+  // Attributes in order: id, type, price, amenities, bookedDates
+  const attributes = ["id", "type", "price", "amenities", "bookedDates"];
+  for (let i = 0; i < attributes.length; i++) {
+    const cell = row.cells[i];
+    const input = document.createElement("input");
+    input.type = "text";
+    // For array fields, join them into a comma-separated string
+    if (attributes[i] === "amenities" || attributes[i] === "bookedDates") {
+      input.value = Array.isArray(room[attributes[i]]) ? room[attributes[i]].join(", ") : room[attributes[i]] || "";
+    } else {
+      input.value = room[attributes[i]] || "";
+    }
+    cell.innerHTML = "";
+    cell.appendChild(input);
+  }
+  const actionsCell = row.cells[attributes.length];
+  actionsCell.innerHTML = "";
+  const saveBtn = document.createElement("button");
+  saveBtn.textContent = "Save";
+  saveBtn.addEventListener("click", async () => {
+    const newData = {};
+    for (let i = 0; i < attributes.length; i++) {
+      const cell = row.cells[i];
+      const input = cell.querySelector("input");
+      let value = input.value;
+      if (attributes[i] === "price") {
+        value = parseFloat(value);
+      }
+      if (attributes[i] === "amenities" || attributes[i] === "bookedDates") {
+        value = value.split(",").map(s => s.trim()).filter(s => s.length > 0);
+      }
+      newData[attributes[i]] = value;
+    }
+    try {
+      await updateItem("roomId", roomId, newData);
+      alert("Room updated successfully.");
+      loadRooms();
+    } catch (error) {
+      console.error("Error saving inline edit:", error);
+      alert("Error saving changes: " + error.message);
+    }
+  });
+  actionsCell.appendChild(saveBtn);
+  const cancelBtn = document.createElement("button");
+  cancelBtn.textContent = "Cancel";
+  cancelBtn.addEventListener("click", () => {
+    loadRooms();
+  });
+  actionsCell.appendChild(cancelBtn);
+}
+
+/***************************************************
+ * FUNCTION: LOAD ROOMS
+ * Queries the "Room" collection and builds a table with inline Edit/Delete.
+ ***************************************************/
+async function loadRooms() {
+  const roomListDiv = document.getElementById("room-list");
+  roomListDiv.innerHTML = "";
+  try {
+    const querySnapshot = await getDocs(collection(db, "Room"));
+    if (querySnapshot.empty) {
+      roomListDiv.innerHTML = "<p>No rooms found.</p>";
+      return;
+    }
+    const table = document.createElement("table");
+    const thead = document.createElement("thead");
+    const headerRow = document.createElement("tr");
+    const headers = ["ID", "Type", "Price", "Amenities", "Booked Dates", "Actions"];
+    headers.forEach(text => {
+      const th = document.createElement("th");
+      th.textContent = text;
+      headerRow.appendChild(th);
+    });
+    thead.appendChild(headerRow);
+    table.appendChild(thead);
+    
+    const tbody = document.createElement("tbody");
+    querySnapshot.forEach(docSnap => {
+      const room = docSnap.data();
+      const roomId = docSnap.id;
+      const row = document.createElement("tr");
+      
+      const idCell = document.createElement("td");
+      idCell.textContent = room.id;
+      row.appendChild(idCell);
+      
+      const typeCell = document.createElement("td");
+      typeCell.textContent = room.type;
+      row.appendChild(typeCell);
+      
+      const priceCell = document.createElement("td");
+      priceCell.textContent = room.price;
+      row.appendChild(priceCell);
+      
+      const amenitiesCell = document.createElement("td");
+      amenitiesCell.textContent = Array.isArray(room.amenities) ? room.amenities.join(", ") : room.amenities;
+      row.appendChild(amenitiesCell);
+      
+      const bookedDatesCell = document.createElement("td");
+      bookedDatesCell.textContent = Array.isArray(room.bookedDates) ? room.bookedDates.join(", ") : room.bookedDates;
+      row.appendChild(bookedDatesCell);
+      
+      const actionsCell = document.createElement("td");
+      const editBtn = document.createElement("button");
+      editBtn.textContent = "Edit";
+      editBtn.addEventListener("click", () => {
+        inlineEditRoom(roomId, room, row);
+      });
+      actionsCell.appendChild(editBtn);
+      
+      const deleteBtn = document.createElement("button");
+      deleteBtn.textContent = "Delete";
+      deleteBtn.addEventListener("click", async () => {
+        if (confirm("Are you sure you want to delete this room?")) {
+          try {
+            await deleteItem("roomId", roomId);
+            loadRooms();
+          } catch (error) {
+            console.error("Error deleting room:", error);
+            alert("Error deleting room: " + error.message);
+          }
+        }
+      });
+      actionsCell.appendChild(deleteBtn);
+      
+      row.appendChild(actionsCell);
+      tbody.appendChild(row);
+    });
+    table.appendChild(tbody);
+    roomListDiv.appendChild(table);
+  } catch (error) {
+    console.error("Error loading rooms:", error);
+    roomListDiv.innerHTML = "<p>Error loading room list.</p>";
+  }
+}
+/***************************************************
+ * FUNCTION: INLINE EDIT BOOKING ROW
+ ***************************************************/
+function inlineEditBooking(bookingId, booking, row) {
+  const attributes = ["bookID", "guestID", "roomID", "checkInDate", "checkOutDate", "status"];
+  for (let i = 0; i < attributes.length; i++) {
+    const cell = row.cells[i];
+    const input = document.createElement("input");
+    input.type = "text";
+    input.value = booking[attributes[i]] || "";
+    cell.innerHTML = "";
+    cell.appendChild(input);
+  }
+  
+  const actionsCell = row.cells[attributes.length];
+  actionsCell.innerHTML = "";
+  
+  const saveBtn = document.createElement("button");
+  saveBtn.textContent = "Save";
+  saveBtn.addEventListener("click", async () => {
+    const newData = {};
+    for (let i = 0; i < attributes.length; i++) {
+      const cell = row.cells[i];
+      const input = cell.querySelector("input");
+      newData[attributes[i]] = input.value;
+    }
+    
+    try {
+      await updateItem("bookingId", bookingId, newData);
+      alert("Booking updated successfully!");
+      loadBookings();
+    } catch (error) {
+      console.error("Error saving booking edit:", error);
+      alert("Error saving changes: " + error.message);
+    }
+  });
+  
+  const cancelBtn = document.createElement("button");
+  cancelBtn.textContent = "Cancel";
+  cancelBtn.addEventListener("click", () => loadBookings());
+  
+  actionsCell.appendChild(saveBtn);
+  actionsCell.appendChild(cancelBtn);
+}
+
+/***************************************************
+ * FUNCTION: LOAD BOOKINGS
+ ***************************************************/
+async function loadBookings() {
+  const bookingListDiv = document.getElementById("booking-list");
+  bookingListDiv.innerHTML = "";
+  
+  try {
+    const querySnapshot = await getDocs(collection(db, "Booking"));
+    if (querySnapshot.empty) {
+      bookingListDiv.innerHTML = "<p>No bookings found.</p>";
+      return;
+    }
+
+    const table = document.createElement("table");
+    const thead = document.createElement("thead");
+    const headerRow = document.createElement("tr");
+    const headers = ["Booking ID", "Guest ID", "Room ID", "Check-In", "Check-Out", "Status", "Actions"];
+    
+    headers.forEach(text => {
+      const th = document.createElement("th");
+      th.textContent = text;
+      headerRow.appendChild(th);
+    });
+    
+    thead.appendChild(headerRow);
+    table.appendChild(thead);
+    
+    const tbody = document.createElement("tbody");
+    querySnapshot.forEach(docSnap => {
+      const booking = docSnap.data();
+      const row = document.createElement("tr");
+      
+      // Booking ID
+      const bookIdCell = document.createElement("td");
+      bookIdCell.textContent = booking.bookID;
+      row.appendChild(bookIdCell);
+      
+      // Guest ID
+      const guestIdCell = document.createElement("td");
+      guestIdCell.textContent = booking.guestID;
+      row.appendChild(guestIdCell);
+      
+      // Room ID
+      const roomIdCell = document.createElement("td");
+      roomIdCell.textContent = booking.roomID;
+      row.appendChild(roomIdCell);
+      
+      // Check-In Date
+      const checkInCell = document.createElement("td");
+      checkInCell.textContent = booking.checkInDate;
+      row.appendChild(checkInCell);
+      
+      // Check-Out Date
+      const checkOutCell = document.createElement("td");
+      checkOutCell.textContent = booking.checkOutDate;
+      row.appendChild(checkOutCell);
+      
+      // Status
+      const statusCell = document.createElement("td");
+      statusCell.textContent = booking.status;
+      row.appendChild(statusCell);
+      
+      // Actions
+      const actionsCell = document.createElement("td");
+      const editBtn = document.createElement("button");
+      editBtn.textContent = "Edit";
+      editBtn.addEventListener("click", () => inlineEditBooking(docSnap.id, booking, row));
+      
+      const deleteBtn = document.createElement("button");
+      deleteBtn.textContent = "Delete";
+      deleteBtn.addEventListener("click", async () => {
+        if (confirm("Are you sure you want to delete this booking?")) {
+          try {
+            await deleteItem("bookingId", docSnap.id);
+            loadBookings();
+          } catch (error) {
+            alert("Error deleting booking: " + error.message);
+          }
+        }
+      });
+      
+      actionsCell.appendChild(editBtn);
+      actionsCell.appendChild(deleteBtn);
+      row.appendChild(actionsCell);
+      tbody.appendChild(row);
+    });
+    
+    table.appendChild(tbody);
+    bookingListDiv.appendChild(table);
+  } catch (error) {
+    console.error("Error loading bookings:", error);
+    bookingListDiv.innerHTML = "<p>Error loading bookings</p>";
+  }
+}
+
 
 /***************************************************
  * 10. DOMContentLoaded - Main
@@ -481,7 +970,7 @@ async function updateItem(itemType, docId, newData) {
 document.addEventListener("DOMContentLoaded", () => {
   console.log("populate.js loaded");
 
-  // GUEST
+  // GUEST FORM HANDLER
   const guestForm = document.getElementById("guestForm");
   if (guestForm) {
     guestForm.addEventListener("submit", async (e) => {
@@ -497,7 +986,7 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
-  // EMPLOYEE
+  // EMPLOYEE FORM HANDLER
   const employeeForm = document.getElementById("employeeForm");
   if (employeeForm) {
     employeeForm.addEventListener("submit", async (e) => {
@@ -512,7 +1001,7 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
-  // ROOM
+  // ROOM FORM HANDLER
   const roomForm = document.getElementById("roomForm");
   if (roomForm) {
     roomForm.addEventListener("submit", async (e) => {
@@ -526,15 +1015,15 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
-  // BOOKING (NEW)
+  // BOOKING FORM HANDLER
   const bookingForm = document.getElementById("bookingForm");
   if (bookingForm) {
     bookingForm.addEventListener("submit", async (e) => {
       e.preventDefault();
-      const roomId      = document.getElementById("booking-roomId").value.trim();
-      const guestId     = document.getElementById("booking-guestId").value.trim();
+      const roomId = document.getElementById("booking-roomId").value.trim();
+      const guestId = document.getElementById("booking-guestId").value.trim();
       const checkInDate = document.getElementById("booking-checkIn").value;
-      const checkOutDate= document.getElementById("booking-checkOut").value;
+      const checkOutDate = document.getElementById("booking-checkOut").value;
       try {
         await createBooking(roomId, guestId, checkInDate, checkOutDate);
         bookingForm.reset();
@@ -545,7 +1034,7 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
-  // UNIFIED DELETE
+  // UNIFIED DELETE HANDLER
   const deleteTypeSelect = document.getElementById("deleteTypeSelect");
   const deleteIdInput = document.getElementById("deleteIdInput");
   const deleteItemBtn = document.getElementById("deleteItemBtn");
@@ -567,150 +1056,28 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
-  // UNIFIED EDIT
-  const editTypeSelect = document.getElementById("editTypeSelect");
-  const editIdInput = document.getElementById("editIdInput");
-  const fetchItemBtn = document.getElementById("fetchItemBtn");
-  const editForm = document.getElementById("editForm");
-  const updateItemBtn = document.getElementById("updateItemBtn");
-
-  // Our sub-fields
-  const guestFields = document.getElementById("guestFields");
-  const guestEditFName = document.getElementById("guestEditFName");
-  const guestEditSName = document.getElementById("guestEditSName");
-
-  const employeeFields = document.getElementById("employeeFields");
-  const employeeEditName = document.getElementById("employeeEditName");
-  const employeeEditRole = document.getElementById("employeeEditRole");
-
-  const roomFields = document.getElementById("roomFields");
-  const roomEditType = document.getElementById("roomEditType");
-  const roomEditPrice = document.getElementById("roomEditPrice");
-  const roomEditAmenities = document.getElementById("roomEditAmenities");
-
-  // NEW: Booking fields
-  const bookingFields = document.getElementById("bookingFields");
-  const bookingEditGuestId = document.getElementById("bookingEditGuestId");
-  const bookingEditRoomId = document.getElementById("bookingEditRoomId");
-  const bookingEditCheckIn = document.getElementById("bookingEditCheckIn");
-  const bookingEditCheckOut = document.getElementById("bookingEditCheckOut");
-  const bookingEditStatus = document.getElementById("bookingEditStatus");
-
-  let currentDocId = null;
-  let currentItemType = null;
-
-  if (fetchItemBtn) {
-    fetchItemBtn.addEventListener("click", async () => {
-      const itemType = editTypeSelect.value;
-      const itemId = editIdInput.value.trim();
-      if (!itemId) {
-        alert("Enter an ID/UID/empId to fetch");
-        return;
-      }
-
-      // Hide all fields initially
-      guestFields.style.display = "none";
-      employeeFields.style.display = "none";
-      roomFields.style.display = "none";
-      bookingFields.style.display = "none";
-      editForm.style.display = "none";
-
-      try {
-        const { docId, data } = await fetchItemForEdit(itemType, itemId);
-        currentDocId = docId;
-        currentItemType = itemType;
-
-        // Show the form
-        editForm.style.display = "block";
-
-        if (itemType === "guestUid") {
-          // Show guest fields
-          guestFields.style.display = "block";
-          guestEditFName.value = data.fName || "";
-          guestEditSName.value = data.sName || "";
-        }
-        else if (itemType === "employeeUid" || itemType === "employeeEmpId") {
-          // Show employee fields
-          employeeFields.style.display = "block";
-          employeeEditName.value = data.name || "";
-          employeeEditRole.value = data.role || "";
-        }
-        else if (itemType === "roomId") {
-          // Show room fields
-          roomFields.style.display = "block";
-          roomEditType.value = data.type || "";
-          roomEditPrice.value = data.price || 0;
-          const am = data.amenities || [];
-          roomEditAmenities.value = am.join(", ");
-        }
-        else if (itemType === "bookingId") {
-          // Show booking fields
-          bookingFields.style.display = "block";
-          bookingEditGuestId.value = data.guestID || "";
-          bookingEditRoomId.value = data.roomID || "";
-          bookingEditCheckIn.value = data.checkInDate || "";
-          bookingEditCheckOut.value = data.checkOutDate || "";
-          bookingEditStatus.value = data.status || "";
-        }
-      } catch (err) {
-        console.error("Fetch item error:", err);
-        alert(err.message);
-      }
-    });
-  }
-
-  if (updateItemBtn) {
-    editForm.addEventListener("submit", async (e) => {
+  /***************************************************
+   * NAVBAR HANDLING
+   ***************************************************/
+  document.querySelectorAll('.nav-link').forEach(link => {
+    link.addEventListener('click', function (e) {
       e.preventDefault();
-      if (!currentDocId || !currentItemType) {
-        alert("No item is currently loaded. Fetch first.");
-        return;
+      const targetId = this.getAttribute('data-target');
+      document.querySelectorAll('.section').forEach(section => {
+        section.classList.remove('active');
+      });
+      document.getElementById(targetId).classList.add('active');
+      if (targetId === "guest-section") {
+        loadGuests();
+      } else if (targetId === "employee-section") {
+        loadEmployees();
+      } else if (targetId === "room-section") {
+        loadRooms();
       }
-      let newData = {};
-
-      if (currentItemType === "guestUid") {
-        const fName = guestEditFName.value.trim();
-        const sName = guestEditSName.value.trim();
-        newData = { fName, sName };
+      if (targetId === "booking-section") {
+        loadBookings();
       }
-      else if (currentItemType === "employeeUid" || currentItemType === "employeeEmpId") {
-        const name = employeeEditName.value.trim();
-        const role = employeeEditRole.value.trim();
-        newData = { name, role };
-      }
-      else if (currentItemType === "roomId") {
-        const typeVal = roomEditType.value.trim();
-        const priceVal = parseFloat(roomEditPrice.value) || 0;
-        const amenitiesStr = roomEditAmenities.value.trim();
-        const amenitiesArray = amenitiesStr
-          .split(",")
-          .map(a => a.trim())
-          .filter(a => a !== "");
-        newData = { type: typeVal, price: priceVal, amenities: amenitiesArray };
-      }
-      else if (currentItemType === "bookingId") {
-        const guestUidVal = bookingEditGuestId.value.trim();
-        const roomIdVal   = bookingEditRoomId.value.trim();
-        const checkInVal  = bookingEditCheckIn.value;
-        const checkOutVal = bookingEditCheckOut.value;
-        const statusVal   = bookingEditStatus.value.trim();
-
-        // Only set fields that user actually wants to change:
-        newData = {};
-        if (guestUidVal) newData.guestID = guestUidVal;
-        if (roomIdVal)   newData.roomID = roomIdVal;
-        if (checkInVal)  newData.checkInDate = checkInVal;
-        if (checkOutVal) newData.checkOutDate = checkOutVal;
-        if (statusVal)   newData.status = statusVal;
-      }
-
-      try {
-        await updateItem(currentItemType, currentDocId, newData);
-        alert(`Item updated successfully! (docId=${currentDocId})`);
-      } catch (err) {
-        console.error("Update error:", err);
-        alert(err.message);
-      }
+      // Add similar calls for other sections if needed.
     });
-  }
+  });
 });
