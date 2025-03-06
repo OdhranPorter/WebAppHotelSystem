@@ -71,27 +71,22 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
   });
 
-
-
-
   /***************************************************
    * 4. FETCH & DISPLAY ROOMS
    ***************************************************/
   const roomsContainer = document.getElementById("roomsContainer");
   try {
-    const querySnapshot = await getDocs(collection(db, "Room"));
+    // Fetch room types from the "RoomType" collection
+    const querySnapshot = await getDocs(collection(db, "RoomType"));
     
     querySnapshot.forEach((docSnap) => {
-      const roomData = docSnap.data();
-      console.log("Room found:", roomData);
+      const roomType = docSnap.id; // Document ID is the room type (e.g., "Standard", "Family")
+      const roomData = docSnap.data(); // Contains price, amenities, and imageURL
+      console.log("Room found:", roomType, roomData);
 
-      const roomId    = roomData.id || "No ID";
-      const roomType  = roomData.type || "Unknown";
       const price     = roomData.price || 0;
       const amenities = roomData.amenities || [];
-
-      // Decide which image to show
-      const imagePath = getRoomImagePath(roomType);
+      const imageUrl  = roomData.imageURL || "images/room_default.jpg"; // Fallback image
 
       // Create card
       const card = document.createElement("div");
@@ -109,7 +104,7 @@ document.addEventListener("DOMContentLoaded", async () => {
       }).join("");
 
       card.innerHTML = `
-        <img src="${imagePath}" alt="${roomType}" class="room-image" />
+        <img src="${imageUrl}" alt="${roomType}" class="room-image" />
         <h2>${roomType} Room</h2>
         <p>Price: $${price} / night</p>
         <p><strong>Amenities:</strong></p>
@@ -122,8 +117,8 @@ document.addEventListener("DOMContentLoaded", async () => {
       // Book Now action
       const bookBtn = card.querySelector("button");
       bookBtn.addEventListener("click", () => {
-        // Navigate to booking or pass roomId param
-        window.location.href = "booking?roomId=" + roomId;
+        // Navigate to booking or pass roomType as a parameter
+        window.location.href = "booking?roomType=" + roomType;
       });
 
       roomsContainer.appendChild(card);
@@ -137,15 +132,6 @@ document.addEventListener("DOMContentLoaded", async () => {
 /***************************************************
  * HELPER FUNCTIONS (unchanged)
  ***************************************************/
-function getRoomImagePath(roomType) {
-  const type = roomType.toLowerCase();
-  if (type.includes("deluxe")) return "images/deluxe.jpg";
-  if (type.includes("suite")) return "images/suite.jpg";
-  if (type.includes("standard")) return "images/standard.jpg";
-  if (type.includes("family")) return "images/family.jpg";
-  return "images/room_default.jpg";
-}
-
 function getAmenityIcon(amenity) {
   const name = amenity.toLowerCase();
   if (name.includes("wi-fi") || name.includes("wifi")) return "images/icon_wifi.png";
@@ -157,13 +143,3 @@ function getAmenityIcon(amenity) {
   if (name.includes("towels")) return "images/icon_towels.png";
   return "images/icon_amenity.png";
 }
-
-  // If the user clicks "Book Now" for a specific room:
-  bookNowBtn.addEventListener("click", () => {
-    const roomId = "R101"; // or retrieve dynamically
-    if (!auth.currentUser) {
-      window.location.href = "login?from=booking?roomId=" + roomId;
-    } else {
-      window.location.href = "booking?roomId=" + roomId;
-    }
-  });
