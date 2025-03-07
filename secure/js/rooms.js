@@ -7,7 +7,9 @@ import {
 import {
   getFirestore,
   collection,
-  getDocs
+  getDocs,
+  doc,
+  getDoc
 } from "https://www.gstatic.com/firebasejs/11.3.0/firebase-firestore.js";
 
 import {
@@ -16,7 +18,7 @@ import {
   signOut
 } from "https://www.gstatic.com/firebasejs/11.3.0/firebase-auth.js";
 
-// REPLACE with your actual config:
+// Firebase config
 const firebaseConfig = {
   apiKey: "AIzaSyDw5aeA0uwE7R06Ht1wjkx6TcehPWs0Hac",
   authDomain: "hotel-booking-3aad3.firebaseapp.com",
@@ -72,48 +74,41 @@ document.addEventListener("DOMContentLoaded", async () => {
   });
 
   /***************************************************
-   * 4. FETCH & DISPLAY ROOMS
+   * 4. FETCH & DISPLAY ROOM TYPES
    ***************************************************/
   const roomsContainer = document.getElementById("roomsContainer");
   try {
-    // Fetch room types from the "RoomType" collection
+    // Fetch all room types
     const querySnapshot = await getDocs(collection(db, "RoomType"));
     
-    querySnapshot.forEach((docSnap) => {
-      const roomType = docSnap.id; // Document ID is the room type (e.g., "Standard", "Family")
-      const roomData = docSnap.data(); // Contains price, amenities, and images array
-      console.log("Room found:", roomType, roomData);
-
-      const price     = roomData.price || 0;
-      const amenities = roomData.amenities || [];
-      const imagess = roomData.images || []; // Array of image URLs
+    querySnapshot.forEach(async (typeDoc) => {
+      const roomType = typeDoc.id;
+      const typeData = typeDoc.data();
 
       // Create card
       const card = document.createElement("div");
       card.classList.add("room-card");
 
-      // Build carousel for images
+      // Build carousel
       const carousel = document.createElement("div");
       carousel.classList.add("carousel");
-
-      // Add images to the carousel
-      imagess.forEach((images, index) => {
+      typeData.images.forEach((image, index) => {
         const img = document.createElement("img");
-        img.src = images;
+        img.src = image;
         img.alt = `${roomType} Room Image ${index + 1}`;
         img.classList.add("carousel-image");
-        if (index === 0) img.style.display = "block"; // Show first image by default
+        if (index === 0) img.style.display = "block";
         carousel.appendChild(img);
       });
 
       // Add carousel navigation buttons
       const prevButton = document.createElement("button");
-      prevButton.innerHTML = "&#10094;"; // Left arrow
+      prevButton.innerHTML = "&#10094;";
       prevButton.classList.add("carousel-button", "prev");
       prevButton.addEventListener("click", () => navigateCarousel(carousel, -1));
 
       const nextButton = document.createElement("button");
-      nextButton.innerHTML = "&#10095;"; // Right arrow
+      nextButton.innerHTML = "&#10095;";
       nextButton.classList.add("carousel-button", "next");
       nextButton.addEventListener("click", () => navigateCarousel(carousel, 1));
 
@@ -121,7 +116,7 @@ document.addEventListener("DOMContentLoaded", async () => {
       carousel.appendChild(nextButton);
 
       // Build amenities list
-      const amenitiesList = amenities.map((amenity) => {
+      const amenitiesList = typeData.amenities.map((amenity) => {
         const icon = getAmenityIcon(amenity);
         return `
           <li>
@@ -131,30 +126,36 @@ document.addEventListener("DOMContentLoaded", async () => {
         `;
       }).join("");
 
+      // Card content
       card.innerHTML = `
         <h2>${roomType} Room</h2>
-        <p>Price: $${price} / night</p>
+        <p>Price: $${typeData.price} / night</p>
         <p><strong>Amenities:</strong></p>
         <ul class="amenities-list">
           ${amenitiesList}
         </ul>
-        <button>Book Now</button>
+        <button class="book-now-btn">Book Now</button>
       `;
 
-      // Insert carousel at the top of the card
+      // Insert carousel at the top
       card.insertBefore(carousel, card.firstChild);
 
       // Book Now action
-      const bookBtn = card.querySelector("button");
+      const bookBtn = card.querySelector(".book-now-btn");
       bookBtn.addEventListener("click", () => {
-        // Navigate to booking or pass roomType as a parameter
-        window.location.href = "booking?roomType=" + roomType;
+        const user = auth.currentUser;
+        if (!user) {
+          const redirectUrl = `booking?roomType=${encodeURIComponent(roomType)}`;
+          window.location.href = `login?redirect=${encodeURIComponent(redirectUrl)}`;
+        } else {
+          window.location.href = `booking?roomType=${encodeURIComponent(roomType)}`;
+        }
       });
 
       roomsContainer.appendChild(card);
     });
   } catch (error) {
-    console.error("Error fetching rooms:", error);
+    console.error("Error fetching room types:", error);
     roomsContainer.innerHTML = "<p>Failed to load rooms. Please try again later.</p>";
   }
 });
