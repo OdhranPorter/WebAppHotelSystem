@@ -1037,30 +1037,29 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
   // Image Form Handler
-const imageForm = document.getElementById("imageForm");
-if (imageForm) {
-  imageForm.addEventListener("submit", async (e) => {
-    e.preventDefault();
-    const roomType = document.getElementById("image-roomType").value;
-    const imageType = document.getElementById("image-type").value;
-    const fileInput = document.getElementById("image-file");
-    
-    if (fileInput.files.length === 0) {
-      alert("Please select an image file");
-      return;
-    }
-
-    try {
-      await uploadRoomImage(roomType, imageType, fileInput.files[0]);
-      alert("Image uploaded successfully!");
-      imageForm.reset();
-      loadImages();
-    } catch (error) {
-      console.error("Upload error:", error);
-      alert(error.message);
-    }
-  });
-}
+  const imageForm = document.getElementById("imageForm");
+  if (imageForm) {
+    imageForm.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const roomType = document.getElementById("image-roomType").value;
+      const fileInput = document.getElementById("image-file");
+      
+      if (fileInput.files.length === 0) {
+        alert("Please select an image file");
+        return;
+      }
+  
+      try {
+        await uploadRoomImage(roomType, fileInput.files[0]);
+        alert("Image added to array successfully!");
+        imageForm.reset();
+        loadImages();
+      } catch (error) {
+        console.error("Upload error:", error);
+        alert(error.message);
+      }
+    });
+  }
 
 // Load Images Handler
 window.loadImages = async function() {
@@ -1090,10 +1089,10 @@ window.loadImages = async function() {
     });
   }
 
- /***************************************************
- * IMAGE HANDLING FUNCTIONS (UPDATED FOR ROOMTYPE)
+/***************************************************
+ * IMAGE HANDLING FUNCTIONS (ARRAY VERSION)
  ***************************************************/
-async function uploadRoomImage(roomType, imageType, file) {
+async function uploadRoomImage(roomType, file) {
   try {
     const reader = new FileReader();
     reader.readAsDataURL(file);
@@ -1103,10 +1102,10 @@ async function uploadRoomImage(roomType, imageType, file) {
         const base64String = reader.result;
         const roomTypeRef = doc(db, "RoomType", roomType);
 
-        // Create or update the RoomType document
+        // Create or update the RoomType document with array
         await setDoc(roomTypeRef, {
-          amenities: arrayUnion(),
-          imageURL: base64String,
+          amenities: [],
+          images: arrayUnion(base64String),
           price: 0
         }, { merge: true });
 
@@ -1130,21 +1129,23 @@ async function loadRoomImages(roomType) {
 
     if (docSnap.exists()) {
       const data = docSnap.data();
-      if (data.imageURL) {
-        const imgContainer = document.createElement("div");
-        imgContainer.className = "image-item";
-        
-        const img = document.createElement("img");
-        img.src = data.imageURL;
-        img.alt = `${roomType} image`;
-        
-        const deleteBtn = document.createElement("button");
-        deleteBtn.textContent = "Delete";
-        deleteBtn.onclick = () => deleteImage(roomType);
-        
-        imgContainer.appendChild(img);
-        imgContainer.appendChild(deleteBtn);
-        gallery.appendChild(imgContainer);
+      if (data.images && data.images.length > 0) {
+        data.images.forEach((image, index) => {
+          const imgContainer = document.createElement("div");
+          imgContainer.className = "image-item";
+          
+          const img = document.createElement("img");
+          img.src = image;
+          img.alt = `${roomType} image ${index + 1}`;
+          
+          const deleteBtn = document.createElement("button");
+          deleteBtn.textContent = "Delete";
+          deleteBtn.onclick = () => deleteImage(roomType, image);
+          
+          imgContainer.appendChild(img);
+          imgContainer.appendChild(deleteBtn);
+          gallery.appendChild(imgContainer);
+        });
       }
     }
   } catch (error) {
@@ -1152,18 +1153,17 @@ async function loadRoomImages(roomType) {
   }
 }
 
-async function deleteImage(roomType) {
+async function deleteImage(roomType, imageToDelete) {
   try {
     const roomTypeRef = doc(db, "RoomType", roomType);
     await updateDoc(roomTypeRef, {
-      imageURL: deleteField()
+      images: arrayRemove(imageToDelete)
     });
     loadImages();
   } catch (error) {
     console.error("Error deleting image:", error);
   }
 }
-
 /***************************************************
  * UPDATED DOMCONTENTLOADED SECTION
  ***************************************************/
