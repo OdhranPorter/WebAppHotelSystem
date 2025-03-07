@@ -3,30 +3,36 @@
 <head>
   <meta charset="UTF-8" />
   <title>Book a Room</title>
-
-  <!-- booking CSS -->
   <link rel="stylesheet" href="css/booking.css" />
-
-  <!-- Flatpickr CSS from CDN -->
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css" />
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/themes/material_blue.css" />
+  <!-- Flatpickr CSS -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
 </head>
 <body>
   <div class="container">
-    <!-- Inside the container div -->
     <h1>Book Your Stay</h1>
-    <p id="roomTypeDisplay"></p>
-    <p id="priceDisplay"></p>
-    <div class="calendar-container">
-      <input type="text" id="datePicker" placeholder="Choose dates" />
+    <div id="roomDetails">
+      <h2 id="roomTypeDisplay"></h2>
+      <p id="priceDisplay"></p>
+      <p id="amenitiesDisplay"></p>
     </div>
-    <button id="confirmBookingBtn">Confirm Booking</button>
+    
+    <div class="calendar-container">
+      <input type="text" id="datePicker" placeholder="Select Check-in & Check-out Dates">
+    </div>
+    
+    <div id="bookingSummary" style="display: none;">
+      <h3>Booking Summary</h3>
+      <p>Room Number: <span id="summaryRoomId"></span></p>
+      <p>Dates: <span id="summaryDates"></span></p>
+      <p>Total Price: $<span id="summaryPrice"></span></p>
+    </div>
+
+    <button id="confirmBookingBtn" style="display: none;">Confirm Booking</button>
   </div>
 
   <!-- Flatpickr JS -->
   <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
-
-  <!-- Our custom booking script -->
+  <!-- Firebase and custom JS -->
   <script type="module" src="js/booking.js"></script>
 </body>
 </html>
