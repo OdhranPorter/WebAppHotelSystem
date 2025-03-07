@@ -1104,9 +1104,7 @@ async function uploadRoomImage(roomType, file) {
 
         // Create or update the RoomType document with array
         await setDoc(roomTypeRef, {
-          amenities: [],
           images: arrayUnion(base64String),
-          price: 0
         }, { merge: true });
 
         resolve();
