@@ -81,16 +81,44 @@ document.addEventListener("DOMContentLoaded", async () => {
     
     querySnapshot.forEach((docSnap) => {
       const roomType = docSnap.id; // Document ID is the room type (e.g., "Standard", "Family")
-      const roomData = docSnap.data(); // Contains price, amenities, and imageURL
+      const roomData = docSnap.data(); // Contains price, amenities, and images array
       console.log("Room found:", roomType, roomData);
 
       const price     = roomData.price || 0;
       const amenities = roomData.amenities || [];
-      const imageUrl  = roomData.imageURL || "images/room_default.jpg"; // Fallback image
+      const imagess = roomData.images || []; // Array of image URLs
 
       // Create card
       const card = document.createElement("div");
       card.classList.add("room-card");
+
+      // Build carousel for images
+      const carousel = document.createElement("div");
+      carousel.classList.add("carousel");
+
+      // Add images to the carousel
+      imagess.forEach((images, index) => {
+        const img = document.createElement("img");
+        img.src = images;
+        img.alt = `${roomType} Room Image ${index + 1}`;
+        img.classList.add("carousel-image");
+        if (index === 0) img.style.display = "block"; // Show first image by default
+        carousel.appendChild(img);
+      });
+
+      // Add carousel navigation buttons
+      const prevButton = document.createElement("button");
+      prevButton.innerHTML = "&#10094;"; // Left arrow
+      prevButton.classList.add("carousel-button", "prev");
+      prevButton.addEventListener("click", () => navigateCarousel(carousel, -1));
+
+      const nextButton = document.createElement("button");
+      nextButton.innerHTML = "&#10095;"; // Right arrow
+      nextButton.classList.add("carousel-button", "next");
+      nextButton.addEventListener("click", () => navigateCarousel(carousel, 1));
+
+      carousel.appendChild(prevButton);
+      carousel.appendChild(nextButton);
 
       // Build amenities list
       const amenitiesList = amenities.map((amenity) => {
@@ -104,7 +132,6 @@ document.addEventListener("DOMContentLoaded", async () => {
       }).join("");
 
       card.innerHTML = `
-        <img src="${imageUrl}" alt="${roomType}" class="room-image" />
         <h2>${roomType} Room</h2>
         <p>Price: $${price} / night</p>
         <p><strong>Amenities:</strong></p>
@@ -113,6 +140,9 @@ document.addEventListener("DOMContentLoaded", async () => {
         </ul>
         <button>Book Now</button>
       `;
+
+      // Insert carousel at the top of the card
+      card.insertBefore(carousel, card.firstChild);
 
       // Book Now action
       const bookBtn = card.querySelector("button");
@@ -130,7 +160,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 });
 
 /***************************************************
- * HELPER FUNCTIONS (unchanged)
+ * HELPER FUNCTIONS
  ***************************************************/
 function getAmenityIcon(amenity) {
   const name = amenity.toLowerCase();
@@ -142,4 +172,26 @@ function getAmenityIcon(amenity) {
   if (name.includes("crib")) return "images/icon_crib.png";
   if (name.includes("towels")) return "images/icon_towels.png";
   return "images/icon_amenity.png";
+}
+
+// Carousel navigation logic
+function navigateCarousel(carousel, direction) {
+  const images = carousel.querySelectorAll(".carousel-image");
+  let currentIndex = 0;
+
+  // Find the currently visible image
+  images.forEach((img, index) => {
+    if (img.style.display === "block") {
+      currentIndex = index;
+      img.style.display = "none"; // Hide current image
+    }
+  });
+
+  // Calculate the next image index
+  let nextIndex = currentIndex + direction;
+  if (nextIndex >= images.length) nextIndex = 0; // Loop to first image
+  if (nextIndex < 0) nextIndex = images.length - 1; // Loop to last image
+
+  // Show the next image
+  images[nextIndex].style.display = "block";
 }
