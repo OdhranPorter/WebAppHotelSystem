@@ -9,6 +9,7 @@ import {
   where,
   getDocs,
   doc,
+  getDoc,
   runTransaction,
   setDoc,
   updateDoc,
@@ -65,19 +66,59 @@ onAuthStateChanged(auth, async (user) => {
     roomTypeDisplay.textContent = `${roomType} Room`;
     priceDisplay.textContent = `$${typeData.price}/night`;
 
-    // Initialize date picker
+    // Fetch all rooms of this type
+    const roomsQuery = query(collection(db, "Room"), where("type", "==", roomType));
+    const roomsSnapshot = await getDocs(roomsQuery);
+    const totalRooms = roomsSnapshot.size;
+
+    // Calculate fully booked dates
+    const bookedCounts = new Map();
+    roomsSnapshot.forEach(roomDoc => {
+      const bookedDates = roomDoc.data().bookedDates || [];
+      bookedDates.forEach(date => {
+        bookedCounts.set(date, (bookedCounts.get(date) || 0) + 1);
+      });
+    });
+
+    const disabledDates = Array.from(bookedCounts.entries())
+      .filter(([date, count]) => count >= totalRooms)
+      .map(([date]) => date);
+
+    // Initialize date picker with disabled dates
     flatpickr(datePickerInput, {
       mode: "range",
       dateFormat: "Y-m-d",
       minDate: "today",
-      onChange: async (selectedDates) => {
+      disable: disabledDates,
+      onChange: async (selectedDates, dateStr, instance) => {
+        const bookingSummary = document.getElementById('bookingSummary');
+        const confirmBtn = document.getElementById('confirmBookingBtn');
+        
         if (selectedDates.length === 2) {
-          // Find first available room for these dates
           selectedRoomId = await findAvailableRoom(roomType, selectedDates);
+          
           if (!selectedRoomId) {
             alert("No available rooms for selected dates");
-            datePickerInput._flatpickr.clear();
+            instance.clear();
+            bookingSummary.style.display = 'none';
+            confirmBtn.style.display = 'none';
+          } else {
+            // Show booking summary
+            bookingSummary.style.display = 'block';
+            confirmBtn.style.display = 'inline-block';
+            document.getElementById('summaryRoomType').textContent = `${roomType} Room`;
+            document.getElementById('summaryRoomId').textContent = selectedRoomId;
+            document.getElementById('summaryDates').textContent = 
+              `${instance.formatDate(selectedDates[0], "Y-m-d")} to ${instance.formatDate(selectedDates[1], "Y-m-d")}`;
+            
+            // Calculate total nights and price
+            const nights = Math.ceil((selectedDates[1] - selectedDates[0]) / (1000 * 3600 * 24));
+            document.getElementById('summaryNights').textContent = nights;
+            document.getElementById('summaryPrice').textContent = nights * typeData.price;
           }
+        } else {
+          bookingSummary.style.display = 'none';
+          confirmBtn.style.display = 'none';
         }
       }
     });
@@ -147,7 +188,6 @@ if (confirmBookingBtn) {
   });
 }
 
-// Helper function to generate date range
 function generateDateRange(startDate, endDate) {
   const dates = [];
   let current = new Date(startDate);
@@ -161,7 +201,6 @@ function generateDateRange(startDate, endDate) {
   return dates;
 }
 
-// Helper function to get next booking ID
 async function getNextBookingId() {
   const counterRef = doc(db, "Counters", "bookingCounter");
   return runTransaction(db, async (transaction) => {

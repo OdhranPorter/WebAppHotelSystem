@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>My Profile</title>
+    <link rel="stylesheet" href="css/profile.css">
+</head>
+<body>
+    <div class="container">
+        <h1>My Profile</h1>
+        
+        <!-- Personal Details Section -->
+        <div class="profile-section">
+            <h2>Personal Information</h2>
+            <div id="personalDetails">
+                <p>Name: <span id="displayName"></span> <button onclick="toggleEdit()">Edit</button></p>
+                <p>Email: <span id="displayEmail"></span></p>
+                <p>Phone: <span id="displayPhone"></span></p>
+                <p>Password: <span id="displayPass">********</span>
+                    <button onclick="togglePassword()">Show</button>
+                </p>
+            </div>
+            
+            <!-- Edit Form -->
+            <div id="editForm" style="display: none;">
+                <input type="text" id="editFName" placeholder="First Name">
+                <input type="text" id="editSName" placeholder="Last Name">
+                <input type="tel" id="editPhone" placeholder="Phone Number">
+                <input type="password" id="editPassword" placeholder="New Password">
+                <button onclick="saveChanges()">Save Changes</button>
+                <button onclick="cancelEdit()">Cancel</button>
+            </div>
+        </div>
+
+        <!-- Bookings Section -->
+        <div class="profile-section">
+            <h2>My Bookings</h2>
+            <div id="bookingsList"><p>Loading bookings...</p></div>
+        </div>
+    </div>
+
+    <!-- Verification Modals -->
+    <div id="codeModal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h3>Email Verification</h3>
+            <p>Enter the 6-digit code sent to your email</p>
+            <input type="text" id="verificationCode" maxlength="6" placeholder="123456">
+            <button onclick="submitCode()">Verify</button>
+            <p id="codeError" class="error-message"></p>
+        </div>
+    </div>
+
+    <div id="passwordModal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h3>Change Password</h3>
+            <input type="password" id="newPassword" placeholder="New Password">
+            <button onclick="submitNewPassword()">Update Password</button>
+        </div>
+    </div>
+
+    <script type="module" src="js/profile.js"></script>
+</body>
+</html>

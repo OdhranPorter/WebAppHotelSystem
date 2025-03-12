@@ -4,7 +4,6 @@
   <meta charset="UTF-8" />
   <title>Book a Room</title>
   <link rel="stylesheet" href="css/booking.css" />
-  <!-- Flatpickr CSS -->
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
 </head>
 <body>
@@ -22,17 +21,17 @@
     
     <div id="bookingSummary" style="display: none;">
       <h3>Booking Summary</h3>
+      <p>Room Type: <span id="summaryRoomType"></span></p>
       <p>Room Number: <span id="summaryRoomId"></span></p>
       <p>Dates: <span id="summaryDates"></span></p>
+      <p>Total Nights: <span id="summaryNights"></span></p>
       <p>Total Price: $<span id="summaryPrice"></span></p>
     </div>
 
     <button id="confirmBookingBtn" style="display: none;">Confirm Booking</button>
   </div>
 
-  <!-- Flatpickr JS -->
   <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
-  <!-- Firebase and custom JS -->
   <script type="module" src="js/booking.js"></script>
 </body>
 </html>
