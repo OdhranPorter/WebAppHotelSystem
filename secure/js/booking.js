@@ -163,15 +163,15 @@ if (confirmBookingBtn) {
       const bookingId = await getNextBookingId();
       const bookingIdStr = `B${bookingId}`;
 
-      // Create booking document
-      await setDoc(doc(db, "Booking", bookingIdStr), {
-        bookID: bookingIdStr,
-        guestID: auth.currentUser.uid,
-        roomID: selectedRoomId,
-        checkInDate: fpInstance.formatDate(fpInstance.selectedDates[0], "Y-m-d"),
-        checkOutDate: fpInstance.formatDate(fpInstance.selectedDates[1], "Y-m-d"),
-        status: "confirmed"
-      });
+      // In confirm booking handler
+    await setDoc(doc(db, "Booking", bookingIdStr), {
+      bookID: bookingIdStr,
+      guestID: auth.currentUser.uid,
+      roomID: selectedRoomId,
+      checkInDate: fpInstance.formatDate(fpInstance.selectedDates[0], "Y-m-d"),
+      checkOutDate: fpInstance.formatDate(fpInstance.selectedDates[1], "Y-m-d"),
+      status: "pending" // Changed from "confirmed"
+  });
 
       // Update room's booked dates
       const dateRange = generateDateRange(fpInstance.selectedDates[0], fpInstance.selectedDates[1]);

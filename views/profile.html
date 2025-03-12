@@ -60,6 +60,96 @@
         </div>
     </div>
 
+    <!-- Enhanced Payment Modal -->
+    <div id="paymentModal" class="modal">
+        <div class="modal-content payment-modal">
+            <span class="close">&times;</span>
+            <h2 class="payment-title">Complete Payment</h2>
+            <div class="payment-section">
+                <h3>Personal Information</h3>
+                <div class="payment-row">
+                    <div class="payment-group">
+                        <label>Full Name</label>
+                        <input type="text" id="fullName" value="John Doe" class="payment-input">
+                    </div>
+                    <div class="payment-group">
+                        <label>Email</label>
+                        <input type="email" id="email" value="john@demo.com" class="payment-input">
+                    </div>
+                </div>
+                <div class="payment-row">
+                    <div class="payment-group">
+                        <label>Phone Number</label>
+                        <input type="tel" id="phone" value="+1 555 123 4567" class="payment-input">
+                    </div>
+                </div>
+            </div>
+
+            <div class="payment-section">
+                <h3>Billing Address</h3>
+                <div class="payment-row">
+                    <div class="payment-group">
+                        <label>Street Address</label>
+                        <input type="text" id="street" value="123 Hotel St" class="payment-input">
+                    </div>
+                </div>
+                <div class="payment-row">
+                    <div class="payment-group">
+                        <label>City</label>
+                        <input type="text" id="city" value="New York" class="payment-input">
+                    </div>
+                    <div class="payment-group">
+                        <label>State</label>
+                        <input type="text" id="state" value="NY" class="payment-input">
+                    </div>
+                    <div class="payment-group">
+                        <label>ZIP Code</label>
+                        <input type="text" id="zip" value="10001" class="payment-input">
+                    </div>
+                </div>
+                <div class="payment-row">
+                    <div class="payment-group">
+                        <label>Country</label>
+                        <input type="text" id="country" value="United States" class="payment-input">
+                    </div>
+                </div>
+            </div>
+
+            <div class="payment-section">
+                <h3>Payment Details</h3>
+                <div class="payment-row">
+                    <div class="payment-group">
+                        <label>Cardholder Name</label>
+                        <input type="text" id="cardName" value="JOHN DOE" class="payment-input">
+                    </div>
+                </div>
+                <div class="payment-row">
+                    <div class="payment-group">
+                        <label>Card Number</label>
+                        <input type="text" id="cardNumber" value="4242 4242 4242 4242" class="payment-input">
+                    </div>
+                </div>
+                <div class="payment-row">
+                    <div class="payment-group">
+                        <label>Expiry Date</label>
+                        <input type="text" id="expiryDate" value="12/30" class="payment-input">
+                    </div>
+                    <div class="payment-group">
+                        <label>CVC</label>
+                        <input type="text" id="cvc" value="123" class="payment-input">
+                    </div>
+                </div>
+            </div>
+
+            <div class="payment-footer">
+                <button class="payment-submit-btn" onclick="submitPayment()">
+                    Pay $<span id="paymentAmount">0.00</span> Now
+                </button>
+                <p class="payment-disclaimer">This is a demo payment system. No real transactions will be processed.</p>
+            </div>
+        </div>
+    </div>
+
     <script type="module" src="js/profile.js"></script>
 </body>
 </html>

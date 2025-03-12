@@ -32,11 +32,13 @@ const auth = getAuth(app);
 const db = getFirestore(app);
 
 let currentAction = null;
+let currentPaymentBooking = null;
 
 // Modal handling
 const modals = document.querySelectorAll('.modal');
 const codeModal = document.getElementById('codeModal');
 const passwordModal = document.getElementById('passwordModal');
+const paymentModal = document.getElementById('paymentModal');
 
 document.querySelectorAll('.close').forEach(closeBtn => {
     closeBtn.onclick = () => modals.forEach(m => m.style.display = 'none');
@@ -56,7 +58,6 @@ onAuthStateChanged(auth, async (user) => {
     }
 
     try {
-        // Load personal details
         const userDoc = await getDoc(doc(db, "Guest", user.uid));
         if (!userDoc.exists()) return;
 
@@ -105,8 +106,26 @@ onAuthStateChanged(auth, async (user) => {
 });
 
 function createBookingCard(booking, roomType, typeData, bookingId) {
+    // Ensure status is lowercase for consistency
+    const status = booking.status.toLowerCase();
+    const nights = calculateNights(booking);
+    const totalPrice = typeData.price * nights;
+
     const card = document.createElement('div');
-    card.className = `booking-card ${booking.status}`;
+    card.className = `booking-card ${status}`; // Use lowercase status for classes
+
+    const buttons = status === 'pending' ? `
+        <button class="cancel-btn" onclick="cancelBooking('${bookingId}', '${status}')">
+            Cancel Booking
+        </button>
+        <button class="pay-btn" onclick="showPaymentModal('${bookingId}', ${typeData.price}, ${nights})">
+            Pay Now ($${totalPrice})
+        </button>
+    ` : `
+        <button class="cancel-btn" onclick="cancelBooking('${bookingId}', '${status}')">
+            Cancel Booking
+        </button>
+    `;
 
     card.innerHTML = `
         <div class="booking-image-container">
@@ -115,7 +134,7 @@ function createBookingCard(booking, roomType, typeData, bookingId) {
         <div class="booking-details">
             <h3 class="booking-type">${roomType} Room</h3>
             <p class="booking-dates">${formatDate(booking.checkInDate)} - ${formatDate(booking.checkOutDate)}</p>
-            <div class="booking-status ${booking.status}">${booking.status.toUpperCase()}</div>
+            <div class="booking-status ${status}">${status.toUpperCase()}</div>
             <ul class="amenities-list">
                 ${typeData.amenities.map(amenity => `
                     <li>
@@ -124,13 +143,27 @@ function createBookingCard(booking, roomType, typeData, bookingId) {
                     </li>
                 `).join('')}
             </ul>
-            <button class="cancel-btn" onclick="cancelBooking('${bookingId}')">
-                Cancel Booking
-            </button>
+            ${buttons}
         </div>
     `;
 
     return card;
+}
+
+
+function calculateNights(booking) {
+    const checkIn = new Date(booking.checkInDate);
+    const checkOut = new Date(booking.checkOutDate);
+    return Math.ceil((checkOut - checkIn) / (1000 * 60 * 60 * 24));
+}
+
+function formatDate(dateString) {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('en-US', { 
+        month: 'short', 
+        day: 'numeric', 
+        year: 'numeric' 
+    });
 }
 
 function getAmenityIcon(amenity) {
@@ -147,16 +180,97 @@ function getAmenityIcon(amenity) {
     return icons[name] || 'images/icon_amenity.png';
 }
 
-function formatDate(dateString) {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', { 
-        month: 'short', 
-        day: 'numeric', 
-        year: 'numeric' 
-    });
-}
+// Payment handling
+window.showPaymentModal = function(bookingId, price, nights) {
+    currentPaymentBooking = {
+        id: bookingId,
+        amount: price * nights
+    };
+    document.getElementById('paymentAmount').textContent = currentPaymentBooking.amount;
+    paymentModal.style.display = 'block';
+};
 
-// Password visibility toggle
+window.submitPayment = async function() {
+    try {
+        const button = document.querySelector('.payment-submit-btn');
+        const originalText = button.innerHTML;
+        
+        // Show loading state
+        button.innerHTML = `
+            <div class="loading-spinner"></div>
+            Processing Payment...
+        `;
+        button.disabled = true;
+
+        // Collect all payment details (for demo purposes)
+        const paymentDetails = {
+            name: document.getElementById('fullName').value,
+            email: document.getElementById('email').value,
+            phone: document.getElementById('phone').value,
+            address: {
+                street: document.getElementById('street').value,
+                city: document.getElementById('city').value,
+                state: document.getElementById('state').value,
+                zip: document.getElementById('zip').value,
+                country: document.getElementById('country').value
+            },
+            card: {
+                name: document.getElementById('cardName').value,
+                number: document.getElementById('cardNumber').value,
+                expiry: document.getElementById('expiryDate').value,
+                cvc: document.getElementById('cvc').value
+            },
+            amount: currentPaymentBooking.amount
+        };
+
+        console.log('Demo Payment Details:', paymentDetails);
+
+        // Simulate payment processing delay
+        await new Promise(resolve => setTimeout(resolve, 2000));
+        
+        // Random success/failure for demo
+        if (Math.random() < 0.1) { // 10% failure rate
+            throw new Error('Payment declined: Insufficient funds');
+        }
+
+        // Update booking status
+        await updateDoc(doc(db, "Booking", currentPaymentBooking.id), {
+            status: 'confirmed'
+        });
+        
+        // Show success message
+        alert('✅ Payment successful!\nBooking confirmed!');
+        location.reload();
+    } catch (error) {
+        // Show error message
+        alert(`❌ Payment failed: ${error.message}`);
+    } finally {
+        const button = document.querySelector('.payment-submit-btn');
+        button.innerHTML = originalText;
+        button.disabled = false;
+        paymentModal.style.display = 'none';
+    }
+};
+
+// Booking cancellation
+window.cancelBooking = async (bookingId, status) => {
+    const message = status === 'pending' ? 
+        'Cancel this pending booking?' : 
+        'Cancel this confirmed booking? There may be cancellation fees.';
+    
+    if (confirm(message)) {
+        try {
+            await deleteDoc(doc(db, "Booking", bookingId));
+            alert('Booking cancelled successfully');
+            location.reload();
+        } catch (error) {
+            console.error("Cancellation failed:", error);
+            alert('Failed to cancel booking');
+        }
+    }
+};
+
+// Password and profile management
 window.togglePassword = async () => {
     currentAction = 'showPassword';
     codeModal.style.display = 'block';
@@ -206,7 +320,6 @@ window.submitNewPassword = async () => {
     }
 };
 
-// Profile editing functions
 window.toggleEdit = function() {
     document.getElementById('personalDetails').style.display = 'none';
     document.getElementById('editForm').style.display = 'block';
@@ -238,19 +351,5 @@ window.saveChanges = async () => {
     } catch (error) {
         console.error("Update failed:", error);
         alert(`Update failed: ${error.message}`);
-    }
-};
-
-// Booking cancellation
-window.cancelBooking = async (bookingId) => {
-    if (confirm('Are you sure you want to cancel this booking?')) {
-        try {
-            await deleteDoc(doc(db, "Booking", bookingId));
-            alert('Booking cancelled successfully');
-            location.reload();
-        } catch (error) {
-            console.error("Cancellation failed:", error);
-            alert('Failed to cancel booking');
-        }
     }
 };
