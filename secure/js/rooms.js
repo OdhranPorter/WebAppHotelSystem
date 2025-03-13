@@ -168,7 +168,7 @@ function getAmenityIcon(amenity) {
   if (name.includes("wi-fi") || name.includes("wifi")) return "images/icon_wifi.png";
   if (name.includes("tv")) return "images/icon_tv.png";
   if (name.includes("mini-bar") || name.includes("mini bar")) return "images/icon_minibar.jpg";
-  if (name.includes("room service")) return "images/icon_service.png";
+  if (name.includes("room service")) return "images/icon_service.jpg";
   if (name.includes("air conditioning") || name.includes("aircon")) return "images/icon_aircon.png";
   if (name.includes("crib")) return "images/icon_crib.png";
   if (name.includes("towels")) return "images/icon_towels.png";

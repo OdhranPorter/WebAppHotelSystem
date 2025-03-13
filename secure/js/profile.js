@@ -78,9 +78,19 @@ onAuthStateChanged(auth, async (user) => {
             return;
         }
 
-        for (const bookingDoc of bookingsSnapshot.docs) {
+        // Sort bookings: unpaid (pending) first, then by check-in date
+        const bookingsDocs = bookingsSnapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+        bookingsDocs.sort((a, b) => {
+            // Unpaid (pending) first
+            if (a.status === 'pending' && b.status !== 'pending') return -1;
+            if (b.status === 'pending' && a.status !== 'pending') return 1;
+            
+            // Then sort by check-in date
+            return new Date(a.checkInDate) - new Date(b.checkInDate);
+        });
+
+        for (const booking of bookingsDocs) {
             try {
-                const booking = bookingDoc.data();
                 const roomDoc = await getDoc(doc(db, "Room", booking.roomID));
                 const roomData = roomDoc.data();
                 const typeDoc = await getDoc(doc(db, "RoomType", roomData.type));
@@ -90,7 +100,7 @@ onAuthStateChanged(auth, async (user) => {
                     booking,
                     roomData.type,
                     typeData,
-                    bookingDoc.id
+                    booking.id
                 );
                 
                 bookingsList.appendChild(bookingCard);
@@ -172,7 +182,7 @@ function getAmenityIcon(amenity) {
         wifi: 'images/icon_wifi.png',
         tv: 'images/icon_tv.png',
         'mini-bar': 'images/icon_minibar.jpg',
-        'room service': 'images/icon_service.png',
+        'room service': 'images/icon_service.jpg',
         'air conditioning': 'images/icon_aircon.png',
         crib: 'images/icon_crib.png',
         towels: 'images/icon_towels.png'
