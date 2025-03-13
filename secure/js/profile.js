@@ -33,19 +33,15 @@ const db = getFirestore(app);
 
 let currentAction = null;
 let currentPaymentBooking = null;
-let currentExtrasBooking = null; // Global variable for extras
 
 // Modal handling
 const modals = document.querySelectorAll('.modal');
 const codeModal = document.getElementById('codeModal');
 const passwordModal = document.getElementById('passwordModal');
 const paymentModal = document.getElementById('paymentModal');
-const extrasModal = document.getElementById('extrasModal');
 
 document.querySelectorAll('.close').forEach(closeBtn => {
-    closeBtn.onclick = () => {
-        modals.forEach(m => m.style.display = 'none');
-    };
+    closeBtn.onclick = () => modals.forEach(m => m.style.display = 'none');
 });
 
 window.onclick = (event) => {
@@ -82,11 +78,14 @@ onAuthStateChanged(auth, async (user) => {
             return;
         }
 
-        // Sort bookings: pending first, then by check-in date
+        // Sort bookings: unpaid (pending) first, then by check-in date
         const bookingsDocs = bookingsSnapshot.docs.map(d => ({ id: d.id, ...d.data() }));
         bookingsDocs.sort((a, b) => {
+            // Unpaid (pending) first
             if (a.status === 'pending' && b.status !== 'pending') return -1;
             if (b.status === 'pending' && a.status !== 'pending') return 1;
+            
+            // Then sort by check-in date
             return new Date(a.checkInDate) - new Date(b.checkInDate);
         });
 
@@ -103,6 +102,7 @@ onAuthStateChanged(auth, async (user) => {
                     typeData,
                     booking.id
                 );
+                
                 bookingsList.appendChild(bookingCard);
             } catch (error) {
                 console.error("Error processing booking:", error);
@@ -116,15 +116,13 @@ onAuthStateChanged(auth, async (user) => {
 });
 
 function createBookingCard(booking, roomType, typeData, bookingId) {
+    // Ensure status is lowercase for consistency
     const status = booking.status.toLowerCase();
     const nights = calculateNights(booking);
     const totalPrice = typeData.price * nights;
 
-    // If extras exist and there's at least one extra, show a Remove Extras button.
-    const extrasButtons = (booking.extras && booking.extras.length > 0) ? 
-        `<button class="remove-extras-btn" onclick="removeExtras('${bookingId}')">
-            Remove Extras
-        </button>` : "";
+    const card = document.createElement('div');
+    card.className = `booking-card ${status}`; // Use lowercase status for classes
 
     const buttons = status === 'pending' ? `
         <button class="cancel-btn" onclick="cancelBooking('${bookingId}', '${status}')">
@@ -133,22 +131,12 @@ function createBookingCard(booking, roomType, typeData, bookingId) {
         <button class="pay-btn" onclick="showPaymentModal('${bookingId}', ${typeData.price}, ${nights})">
             Pay Now (€${totalPrice})
         </button>
-        <button class="edit-extras-btn" onclick="showExtrasModal('${bookingId}')">
-            Edit Extras
-        </button>
-        ${extrasButtons}
     ` : `
         <button class="cancel-btn" onclick="cancelBooking('${bookingId}', '${status}')">
             Cancel Booking
         </button>
-        <button class="edit-extras-btn" onclick="showExtrasModal('${bookingId}')">
-            Edit Extras
-        </button>
-        ${extrasButtons}
     `;
 
-    const card = document.createElement('div');
-    card.className = `booking-card ${status}`;
     card.innerHTML = `
         <div class="booking-image-container">
             <img src="${typeData.images[0]}" alt="${roomType} Room" class="booking-image">
@@ -168,8 +156,10 @@ function createBookingCard(booking, roomType, typeData, bookingId) {
             ${buttons}
         </div>
     `;
+
     return card;
 }
+
 
 function calculateNights(booking) {
     const checkIn = new Date(booking.checkInDate);
@@ -200,100 +190,29 @@ function getAmenityIcon(amenity) {
     return icons[name] || 'images/icon_amenity.png';
 }
 
-// Extras Modal Functions
-window.showExtrasModal = function(bookingId) {
-    currentExtrasBooking = { id: bookingId, extrasCost: 0, extras: [] };
-    document.getElementById('extrasForm').reset();
-    document.getElementById('extrasTotal').textContent = "0.00";
-    extrasModal.style.display = 'block';
-};
-
-window.calculateExtras = function() {
-    const extrasForm = document.getElementById('extrasForm');
-    const checkboxes = extrasForm.querySelectorAll('input[name="extras"]');
-    let total = 0;
-    let selectedExtras = [];
-    checkboxes.forEach(checkbox => {
-        if (checkbox.checked) {
-            const price = parseFloat(checkbox.getAttribute('data-price'));
-            total += price;
-            selectedExtras.push(checkbox.value);
-        }
-    });
-    currentExtrasBooking.extrasCost = total;
-    currentExtrasBooking.extras = selectedExtras;
-    document.getElementById('extrasTotal').textContent = total.toFixed(2);
-};
-
-window.saveExtras = async function() {
-    // Recalculate extras in case the user did not press "Calculate Extras"
-    window.calculateExtras();
-
-    // Ensure at least one extra is selected
-    if (currentExtrasBooking.extrasCost === 0) {
-        alert("Please select at least one extra before proceeding.");
-        return;
-    }
-
-    try {
-        await updateDoc(doc(db, "Booking", currentExtrasBooking.id), {
-            extras: currentExtrasBooking.extras,
-            extrasCost: currentExtrasBooking.extrasCost,
-            extrasPaid: false
-        });
-        alert("Extras updated. Now please pay for the extras.");
-        extrasModal.style.display = 'none';
-        currentPaymentBooking = {
-            id: currentExtrasBooking.id,
-            amount: currentExtrasBooking.extrasCost,
-            extras: true  // flag indicates extras payment
-        };
-        document.getElementById('paymentAmount').textContent = currentPaymentBooking.amount.toFixed(2);
-        paymentModal.style.display = 'block';
-    } catch (error) {
-        console.error("Failed to update extras:", error);
-        alert("Error updating extras: " + error.message);
-    }
-};
-
-// New Global Function to Remove Extras
-window.removeExtras = async function(bookingId) {
-    try {
-        await updateDoc(doc(db, "Booking", bookingId), {
-            extras: [],
-            extrasCost: 0,
-            extrasPaid: false
-        });
-        alert("Extras removed successfully.");
-        location.reload();
-    } catch (error) {
-        console.error("Error removing extras:", error);
-        alert("Failed to remove extras: " + error.message);
-    }
-};
-
 // Payment handling
 window.showPaymentModal = function(bookingId, price, nights) {
     currentPaymentBooking = {
         id: bookingId,
         amount: price * nights
     };
-    document.getElementById('paymentAmount').textContent = currentPaymentBooking.amount.toFixed(2);
+    document.getElementById('paymentAmount').textContent = currentPaymentBooking.amount;
     paymentModal.style.display = 'block';
 };
 
 window.submitPayment = async function() {
-    let originalText;
     try {
         const button = document.querySelector('.payment-submit-btn');
-        originalText = button.innerHTML;
+        const originalText = button.innerHTML;
         
+        // Show loading state
         button.innerHTML = `
             <div class="loading-spinner"></div>
             Processing Payment...
         `;
         button.disabled = true;
 
+        // Collect all payment details (for demo purposes)
         const paymentDetails = {
             name: document.getElementById('fullName').value,
             email: document.getElementById('email').value,
@@ -315,25 +234,25 @@ window.submitPayment = async function() {
         };
 
         console.log('Demo Payment Details:', paymentDetails);
+
+        // Simulate payment processing delay
         await new Promise(resolve => setTimeout(resolve, 2000));
         
-        if (Math.random() < 0.1) {
+        // Random success/failure for demo
+        if (Math.random() < 0.1) { // 10% failure rate
             throw new Error('Payment declined: Insufficient funds');
         }
 
-        if (currentPaymentBooking.extras) {
-            await updateDoc(doc(db, "Booking", currentPaymentBooking.id), {
-                extrasPaid: true
-            });
-            alert('✅ Extras payment successful!\nExtras added to your booking!');
-        } else {
-            await updateDoc(doc(db, "Booking", currentPaymentBooking.id), {
-                status: 'confirmed'
-            });
-            alert('✅ Payment successful!\nBooking confirmed!');
-        }
+        // Update booking status
+        await updateDoc(doc(db, "Booking", currentPaymentBooking.id), {
+            status: 'confirmed'
+        });
+        
+        // Show success message
+        alert('✅ Payment successful!\nBooking confirmed!');
         location.reload();
     } catch (error) {
+        // Show error message
         alert(`❌ Payment failed: ${error.message}`);
     } finally {
         const button = document.querySelector('.payment-submit-btn');
