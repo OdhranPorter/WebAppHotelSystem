@@ -101,4 +101,23 @@ button[type="submit"] {
   background-color: #e6b800;
   color: white;
   border: none;
-  border-radius: 5px
+  border-radius: 5px;
+  font-size: 16px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+
+/* Footer styling */
+footer {
+  background-color: #111213;
+  color: white;
+  text-align: center;
+  padding: 15px 0;
+  position: fixed;
+  width: 100%;
+  bottom: 0;
+  left: 0;
+  font-size: 14px;
+}
+

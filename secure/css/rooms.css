@@ -7,7 +7,7 @@ body {
 }
 header {
   background-color: #333;
-  color: #fff;
+  color: #fff; 
   padding: 1rem;
 }
 header nav a {
@@ -32,6 +32,11 @@ main {
   margin-top: 2rem;
 }
 
+.room-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+}
+
 .room-card {
   background-color: #fff;
   width: 320px;
@@ -40,6 +45,7 @@ main {
   overflow: hidden;
   text-align: left;
   display: flex;
+  justify-content: space-between;
   flex-direction: column;
 }
 
@@ -72,29 +78,42 @@ main {
   width: 24px;
   height: 24px;
   margin-right: 0.5rem;
+  font-size: 0.9rem;
+  color: #444;
 }
 
+/* Room Booking Button */
 .room-card button {
-  margin: 0 1rem 1rem;
-  padding: 0.6rem 1rem;
+  margin-top: auto;
+  margin:  1rem ;
+  padding: 0.7rem 1.2rem;
   border: none;
   cursor: pointer;
-  background-color: #e6b800;
+  font-size: 1rem;
+  font-weight: bold;
+  background: linear-gradient(135deg, #e6b800, #c89f00);
   color: #fff;
-  border-radius: 3px;
+  border-radius: 5px;
+  transition: background 0.3s ease-in-out, transform 0.2s ease-in-out;
 }
+
 .room-card button:hover {
-  opacity: 0.9;
+  background: linear-gradient(135deg, #c89f00, #a57e00);
+  transform: scale(1.05);
 }
 
+/* Footer styling */
 footer {
-  background-color: #333;
-  color: #fff;
+  background-color: #111213;
+  color: white;
   text-align: center;
-  padding: 1rem;
-  margin-top: 2rem;
+  padding: 15px 0;
+  position: fixed;
+  width: 100%;
+  bottom: 0;
+  left: 0;
+  font-size: 14px;
 }
-
 /* rooms.css */
 
 /* Carousel styles */
