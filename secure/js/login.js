@@ -50,23 +50,25 @@ document.getElementById('loginForm').addEventListener('submit', async (e) => {
 // Registration Form Handler
 document.getElementById('registerForm').addEventListener('submit', async (e) => {
   e.preventDefault();
-  const firstName = document.getElementById('reg-fName').value;
-  const lastName = document.getElementById('reg-sName').value;
+  const fName = document.getElementById('reg-fName').value;
+  const sName = document.getElementById('reg-sName').value;
   const email = document.getElementById('reg-email').value;
-  const phone = document.getElementById('reg-phone').value;
+  const phoneNum = document.getElementById('reg-phone').value;
   const password = document.getElementById('reg-password').value;
+  const role = "guest"
 
   try {
     // Create user
     const userCredential = await createUserWithEmailAndPassword(auth, email, password);
     
     // Store additional user data in Firestore
-    await setDoc(doc(db, 'users', userCredential.user.uid), {
-      firstName,
-      lastName,
+    await setDoc(doc(db, 'Guest', userCredential.user.uid), {
+      fName,
+      sName,
       email,
-      phone,
-      createdAt: new Date()
+      phoneNum,
+      password,
+      role
     });
 
     window.location.href = redirectUrl;
