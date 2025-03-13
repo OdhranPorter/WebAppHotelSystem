@@ -64,7 +64,7 @@ onAuthStateChanged(auth, async (user) => {
     
     // Update UI
     roomTypeDisplay.textContent = `${roomType} Room`;
-    priceDisplay.textContent = `$${typeData.price}/night`;
+    priceDisplay.textContent = `€${typeData.price}/night`;
 
     // Fetch all rooms of this type
     const roomsQuery = query(collection(db, "Room"), where("type", "==", roomType));

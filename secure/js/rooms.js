@@ -129,7 +129,7 @@ document.addEventListener("DOMContentLoaded", async () => {
       // Card content
       card.innerHTML = `
         <h2>${roomType} Room</h2>
-        <p>Price: $${typeData.price} / night</p>
+        <p>Price: €${typeData.price} / night</p>
         <p><strong>Amenities:</strong></p>
         <ul class="amenities-list">
           ${amenitiesList}

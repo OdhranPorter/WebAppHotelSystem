@@ -129,7 +129,7 @@ function createBookingCard(booking, roomType, typeData, bookingId) {
             Cancel Booking
         </button>
         <button class="pay-btn" onclick="showPaymentModal('${bookingId}', ${typeData.price}, ${nights})">
-            Pay Now ($${totalPrice})
+            Pay Now (€${totalPrice})
         </button>
     ` : `
         <button class="cancel-btn" onclick="cancelBooking('${bookingId}', '${status}')">
