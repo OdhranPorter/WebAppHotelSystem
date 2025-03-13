@@ -4,9 +4,21 @@
   <meta charset="UTF-8" />
   <title>Login & Register</title>
   <!-- Link to external CSS file -->
-  <link rel="stylesheet" href="css/login2.css" />
+  <link rel="stylesheet" href="login.css" />
 </head>
 <body>
+  
+  <header>
+    <nav style="display: flex; align-items: center; justify-content: space-between;">
+      <!-- Left side links -->
+      <div>
+        <a href="home.html">Home</a>
+        <a href="rooms.html">Rooms</a>
+      </div>
+    </nav>
+  </header>
+
+
   <!-- Login Container -->
   <div class="container">
     <h2>Login</h2>
@@ -27,16 +39,4 @@
       <input type="tel" id="reg-phone" placeholder="Phone" required />
       <input type="password" id="reg-password" placeholder="Password" required />
      
-      <button type="submit">Register</button>
-    </form>
-  </div>
-
-  <!-- Footer -->
-  <footer>
-    <p>© 2025 MyHotel. All rights reserved.</p>
-  </footer>
-
-  <!-- Script that handles login, register, and redirects -->
-  <script type="module" src="js/login.js"></script>
-</body>
-</html>
+      <button type="submit">Register</

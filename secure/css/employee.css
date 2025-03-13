@@ -2,116 +2,309 @@
 
 /* Reset */
 * {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
-  }
-  
-  body {
-    font-family: Arial, sans-serif;
-    background-color: #f5f5f5;
-  }
-  
-  /* Header nav */
-  header {
-    background-color: #333;
-    color: #fff;
-    padding: 1rem;
-  }
-  header nav a {
-    color: #fff;
-    text-decoration: none;
-    margin-right: 20px;
-  }
-  header nav a:hover {
-    text-decoration: underline;
-  }
-  
-  /* Main area */
-  main {
-    padding: 2rem;
-  }
-  h1 {
-    margin-bottom: 1rem;
-  }
-  
-  /* Container layout */
-  .employee-container {
-    max-width: 900px;
-    margin: 0 auto;
-    display: flex;
-    flex-direction: column;
-    gap: 2rem;
-  }
-  
-  .employee-section {
-    background-color: #fff;
-    padding: 1rem;
-    border-radius: 5px;
-    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-  }
-  .employee-section h2 {
-    margin-top: 0;
-    margin-bottom: 1rem;
-  }
-  
-  /* Create Room Form */
-  #createRoomForm input {
-    display: block;
-    width: 100%;
-    margin-bottom: 1rem;
-    padding: 0.5rem;
-  }
-  #createRoomForm button {
-    padding: 0.5rem 1rem;
-    cursor: pointer;
-    background-color: #e6b800;
-    color: #fff;
-    border: none;
-    border-radius: 5px;
-  }
-  #createRoomForm button:hover {
-    opacity: 0.9;
-  }
-  
-  /* Tables */
-  table {
-    width: 100%;
-    border-collapse: collapse;
-    margin-bottom: 2rem;
-  }
-  table thead tr {
-    background-color: #333;
-    color: #fff;
-  }
-  table thead th {
-    padding: 0.5rem;
-  }
-  table tbody tr:nth-child(even) {
-    background-color: #f9f9f9;
-  }
-  table tbody td {
-    border: 1px solid #ddd;
-    padding: 0.5rem;
-  }
-  
-  /* Action buttons */
-  .action-btn {
-    padding: 0.3rem 0.5rem;
-    margin-right: 0.5rem;
-    cursor: pointer;
-    border: none;
-    border-radius: 3px;
-    color: #fff;
-  }
-  .action-btn.edit {
-    background-color: #555;
-  }
-  .action-btn.delete {
-    background-color: #d9534f;
-  }
-  .action-btn.edit:hover,
-  .action-btn.delete:hover {
-    opacity: 0.8;
-  }
-  
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: Arial, sans-serif;
+  background-color: #f5f5f5;
+  color: #333;
+}
+
+/* Header nav */
+header {
+  background-color: #333;
+  color: #fff;
+  padding: 1rem;
+}
+
+header nav a {
+  color: #fff;
+  text-decoration: none;
+  margin-right: 20px;
+}
+
+header nav a:hover {
+  text-decoration: underline;
+}
+
+/* Main area */
+main {
+  padding: 2rem;
+}
+
+h1 {
+  margin-bottom: 1rem;
+  color: #2b2d42;
+}
+
+/* Container layout */
+.employee-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+.employee-section {
+  background-color: #fff;
+  padding: 1.5rem;
+  border-radius: 8px;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+}
+
+.employee-section h2 {
+  margin-top: 0;
+  margin-bottom: 1.5rem;
+  color: #2b2d42;
+}
+
+/* Room Types Section */
+.room-types-container {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+.room-type-card {
+  background: #fff;
+  border-radius: 8px;
+  box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+  padding: 1.5rem;
+}
+
+.room-type-header {
+  padding-bottom: 1rem;
+  border-bottom: 1px solid #eee;
+  margin-bottom: 1.5rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.room-type-header h3 {
+  color: #333;
+  font-size: 1.4rem;
+  margin: 0;
+}
+
+.rooms-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 1rem;
+}
+
+.room-item {
+  background: #f8f9fa;
+  border: 1px solid #dee2e6;
+  border-radius: 6px;
+  padding: 1.2rem;
+  transition: transform 0.2s;
+  position: relative;
+}
+
+.room-item:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 3px 8px rgba(0,0,0,0.08);
+}
+
+.room-id {
+  font-weight: 600;
+  color: #2b2d42;
+  font-size: 1.1rem;
+}
+
+.room-amenities {
+  color: #6c757d;
+  font-size: 0.9rem;
+  margin: 0.5rem 0;
+  line-height: 1.4;
+}
+
+.room-status {
+  display: inline-block;
+  padding: 0.2rem 0.5rem;
+  border-radius: 3px;
+  font-size: 0.8rem;
+}
+
+.room-status.available {
+  background-color: #dff0d8;
+  color: #3c763d;
+}
+
+.room-status.booked {
+  background-color: #f2dede;
+  color: #a94442;
+}
+
+/* Action buttons */
+.action-btn {
+  padding: 0.3rem 0.5rem;
+  margin-right: 0.5rem;
+  cursor: pointer;
+  border: none;
+  border-radius: 3px;
+  color: #fff;
+}
+
+.action-btn.edit {
+  background-color: #555;
+}
+
+.action-btn.delete {
+  background-color: #dc3545;
+}
+
+.action-btn.edit:hover,
+.action-btn.delete:hover {
+  opacity: 0.8;
+}
+
+/* Amenities Grid */
+.amenities-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.amenity-item {
+  position: relative;
+  padding: 1rem;
+  border: 1px solid #dee2e6;
+  border-radius: 6px;
+  text-align: center;
+  transition: transform 0.2s;
+}
+
+.amenity-item:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 3px 8px rgba(0,0,0,0.08);
+}
+
+.amenity-item img {
+  width: 120px;
+  height: 120px;
+  object-fit: contain;
+  margin-bottom: 0.5rem;
+}
+
+.amenity-item span {
+  display: block;
+  font-weight: 500;
+  color: #333;
+}
+
+.delete-amenity {
+  position: absolute;
+  top: 0.5rem;
+  right: 0.5rem;
+  background: #dc3545;
+  color: white;
+  border: none;
+  border-radius: 50%;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+
+.amenity-item:hover .delete-amenity {
+  opacity: 1;
+}
+
+/* Forms */
+#amenityForm input,
+#editTypeForm input,
+#editTypeForm select {
+  display: block;
+  width: 100%;
+  margin-bottom: 1rem;
+  padding: 0.5rem;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+}
+
+#amenityForm button,
+#editTypeForm button {
+  padding: 0.5rem 1rem;
+  cursor: pointer;
+  background-color: #4CAF50;
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  transition: background-color 0.2s;
+}
+
+#amenityForm button:hover,
+#editTypeForm button:hover {
+  background-color: #45a049;
+}
+
+/* Tables */
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 2rem;
+}
+
+table thead tr {
+  background-color: #333;
+  color: #fff;
+}
+
+table thead th {
+  padding: 0.75rem;
+  text-align: left;
+}
+
+table tbody tr:nth-child(even) {
+  background-color: #f9f9f9;
+}
+
+table tbody td {
+  border: 1px solid #ddd;
+  padding: 0.75rem;
+}
+
+/* Modal Styles */
+.modal {
+  display: none;
+  position: fixed;
+  z-index: 1000;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0,0,0,0.5);
+}
+
+.modal-content {
+  background-color: #fff;
+  margin: 10% auto;
+  padding: 20px;
+  width: 60%;
+  border-radius: 8px;
+  max-height: 80vh;
+  overflow-y: auto;
+}
+
+.close {
+  color: #aaa;
+  float: right;
+  font-size: 28px;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+.close:hover {
+  color: #333;
+}

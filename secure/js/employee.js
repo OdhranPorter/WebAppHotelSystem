@@ -1,277 +1,415 @@
 // employee.js
 
 import {
-    initializeApp
-  } from "https://www.gstatic.com/firebasejs/11.3.0/firebase-app.js";
-  
-  import {
-    getAuth,
-    onAuthStateChanged,
-    signOut
-  } from "https://www.gstatic.com/firebasejs/11.3.0/firebase-auth.js";
-  
-  import {
-    getFirestore,
-    doc,
-    setDoc,
-    getDoc,
-    getDocs,
-    collection,
-    updateDoc,
-    deleteDoc,
-    arrayUnion,
-    arrayRemove
-  } from "https://www.gstatic.com/firebasejs/11.3.0/firebase-firestore.js";
-  
-  // 1. Firebase init
-  const firebaseConfig = {
-    apiKey: "AIzaSyDw5aeA0uwE7R06Ht1wjkx6TcehPWs0Hac",
-    authDomain: "hotel-booking-3aad3.firebaseapp.com",
-    projectId: "hotel-booking-3aad3",
-    storageBucket: "hotel-booking-3aad3.firbasestorage.app",
-    messagingSenderId: "1234567890",
-    appId: "1:1234567890:web:abcdef123456"
-  };
-  const app = initializeApp(firebaseConfig);
-  const auth = getAuth(app);
-  const db   = getFirestore(app);
-  
-  // 2. DOM references
-  const createRoomForm = document.getElementById("createRoomForm");
-  const roomsTableBody = document.querySelector("#roomsTable tbody");
-  const bookingsTableBody = document.querySelector("#bookingsTable tbody");
-  
-  const accountDropdown = document.getElementById("accountDropdown");
-  const accountBtn      = document.getElementById("accountBtn");
-  const accountMenu     = document.getElementById("accountMenu");
-  const logoutBtn       = document.getElementById("logoutBtn");
-  const loginBtn        = document.getElementById("loginBtn");
-  
-  // 3. Auth => must be employee or admin
-  onAuthStateChanged(auth, async (user) => {
-    if (!user) {
-      // Not logged in => redirect
-      window.location.href = "login?from=employee";
-      return;
-    }
-    // Check if user has "Employee" doc => if role===employee OR role===admin => allowed
-    const empSnap = await getDoc(doc(db, "Employee", user.uid));
-    if (!empSnap.exists()) {
-      alert("Access denied - not an Employee");
-      window.location.href = "home";
-      return;
-    }
-    const empData = empSnap.data();
-    if (empData.role !== "employee" && empData.role !== "admin") {
-      alert("Access denied - not an Employee or Admin");
-      window.location.href = "home";
-      return;
-    }
-  
-    // If here => user is employee or admin
-    if (accountDropdown) accountDropdown.style.display = "inline-block";
-    if (loginBtn)        loginBtn.style.display = "none";
-  
-    // Load rooms & bookings
-    loadAllRooms();
-    loadAllBookings();
+  initializeApp
+} from "https://www.gstatic.com/firebasejs/11.3.0/firebase-app.js";
+
+import {
+  getAuth,
+  onAuthStateChanged,
+  signOut
+} from "https://www.gstatic.com/firebasejs/11.3.0/firebase-auth.js";
+
+import {
+  getFirestore,
+  doc,
+  setDoc,
+  getDoc,
+  getDocs,
+  collection,
+  updateDoc,
+  deleteDoc,
+  query,
+  where,
+  writeBatch
+} from "https://www.gstatic.com/firebasejs/11.3.0/firebase-firestore.js";
+
+// Firebase init
+const firebaseConfig = {
+  apiKey: "AIzaSyDw5aeA0uwE7R06Ht1wjkx6TcehPWs0Hac",
+  authDomain: "hotel-booking-3aad3.firebaseapp.com",
+  projectId: "hotel-booking-3aad3",
+  storageBucket: "hotel-booking-3aad3.firbasestorage.app",
+  messagingSenderId: "1234567890",
+  appId: "1:1234567890:web:abcdef123456"
+};
+
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
+
+// DOM references
+const accountDropdown = document.getElementById("accountDropdown");
+const accountBtn = document.getElementById("accountBtn");
+const accountMenu = document.getElementById("accountMenu");
+const logoutBtn = document.getElementById("logoutBtn");
+const loginBtn = document.getElementById("loginBtn");
+const amenityForm = document.getElementById("amenityForm");
+const amenitiesList = document.getElementById("amenitiesList");
+const roomTypesList = document.getElementById("roomTypesList");
+const bookingsTableBody = document.querySelector("#bookingsTable tbody");
+
+// Modal references
+const editTypeModal = document.getElementById("editTypeModal");
+const editTypeForm = document.getElementById("editTypeForm");
+const span = document.getElementsByClassName("close")[0];
+
+// Global variables
+let currentEditingType = null;
+
+// Auth state listener
+onAuthStateChanged(auth, async (user) => {
+  if (!user) {
+    window.location.href = "login?from=employee";
+    return;
+  }
+
+  const empSnap = await getDoc(doc(db, "Employee", user.uid));
+  if (!empSnap.exists() || (empSnap.data().role !== "employee" && empSnap.data().role !== "admin")) {
+    alert("Access denied - not an Employee or Admin");
+    window.location.href = "home";
+    return;
+  }
+
+  // Show account dropdown and hide login button
+  if (accountDropdown) accountDropdown.style.display = "inline-block";
+  if (loginBtn) loginBtn.style.display = "none";
+
+  // Load data
+  loadRoomTypesWithRooms();
+  loadAllBookings();
+  loadAmenities();
+});
+
+// Toggle account menu
+if (accountBtn && accountMenu) {
+  accountBtn.addEventListener("click", () => {
+    accountMenu.style.display = (accountMenu.style.display === "block") ? "none" : "block";
   });
+}
+
+// Logout
+if (logoutBtn) {
+  logoutBtn.addEventListener("click", async () => {
+    await signOut(auth);
+    window.location.href = "home";
+  });
+}
+
+// Modal handling
+span.onclick = () => editTypeModal.style.display = "none";
+window.onclick = (event) => {
+  if (event.target == editTypeModal) editTypeModal.style.display = "none";
+};
+
+// Load room types with their rooms
+async function loadRoomTypesWithRooms() {
+  roomTypesList.innerHTML = "";
   
-  // 4. Toggle account menu
-  if (accountBtn && accountMenu) {
-    accountBtn.addEventListener("click", () => {
-      accountMenu.style.display = (accountMenu.style.display === "block") ? "none" : "block";
+  const [roomsSnapshot, typesSnapshot] = await Promise.all([
+    getDocs(collection(db, "Room")),
+    getDocs(collection(db, "RoomType"))
+  ]);
+
+  const roomsByType = {};
+  const typeDataMap = new Map();
+
+  // Store type data
+  typesSnapshot.forEach(doc => {
+    typeDataMap.set(doc.id, doc.data());
+  });
+
+  // Group rooms by type
+  roomsSnapshot.forEach(doc => {
+    const room = doc.data();
+    if (!roomsByType[room.type]) {
+      roomsByType[room.type] = {
+        rooms: [],
+        typeData: typeDataMap.get(room.type) || {}
+      };
+    }
+    roomsByType[room.type].rooms.push(room);
+  });
+
+  // Create UI for each room type
+  for (const [typeName, { rooms, typeData }] of Object.entries(roomsByType)) {
+    const typeContainer = document.createElement("div");
+    typeContainer.className = "room-type-card";
+    
+    const roomNumbers = rooms.map(room => 
+      parseInt(room.id.replace(/^\D+/g, '')) || 0
+    );
+    const maxRoomNumber = Math.max(...roomNumbers);
+
+    typeContainer.innerHTML = `
+      <div class="room-type-header">
+        <h3>${typeName} Rooms ($${typeData.price}/night)</h3>
+        <div>
+          <button class="edit-type-btn" data-type="${typeName}">Edit Type</button>
+          <button class="create-room-btn" data-type="${typeName}" data-next="${maxRoomNumber + 1}">
+            + Add Room
+          </button>
+        </div>
+      </div>
+      <div class="rooms-list">
+        ${rooms.map(room => `
+          <div class="room-item">
+            <div class="room-details">
+              <div class="room-id">${room.id}</div>
+              <div class="room-amenities">${(typeData.amenities || []).join(', ')}</div>
+              <div class="room-status ${room.status || 'available'}">
+                ${room.status || 'available'}
+              </div>
+            </div>
+            <button class="action-btn delete" data-id="${room.id}">Delete</button>
+          </div>
+        `).join('')}
+      </div>
+    `;
+
+    // Add edit type handler
+    typeContainer.querySelector('.edit-type-btn').addEventListener('click', () => {
+      showEditTypeModal(typeName, typeData);
     });
-  }
-  
-  // 5. Logout
-  if (logoutBtn) {
-    logoutBtn.addEventListener("click", async () => {
-      await signOut(auth);
-      window.location.href = "home";
-    });
-  }
-  
-  // 6. Create Room
-  if (createRoomForm) {
-    createRoomForm.addEventListener("submit", async (e) => {
-      e.preventDefault();
-  
-      const roomId      = document.getElementById("room-id").value.trim();
-      const roomType    = document.getElementById("room-type").value.trim();
-      const priceVal    = parseFloat(document.getElementById("room-price").value.trim()) || 0;
-      const amenitiesStr= document.getElementById("room-amenities").value.trim();
-      
-      const amenitiesArr = amenitiesStr ? amenitiesStr.split(",").map(a => a.trim()) : [];
-  
+
+    // Add create room handler
+    typeContainer.querySelector('.create-room-btn').addEventListener('click', async (e) => {
+      const type = e.target.dataset.type;
+      const nextNumber = parseInt(e.target.dataset.next);
+      const newRoomId = `${type === "Standard" ? "SD" : type.charAt(0).toUpperCase()}${nextNumber.toString().padStart(3, '0')}`;
+
       try {
-        // Create/overwrite doc in "Room"
-        await setDoc(doc(db, "Room", roomId), {
-          id: roomId,
-          type: roomType,
-          price: priceVal,
-          bookedDates: [],
-          amenities: amenitiesArr
+        await setDoc(doc(db, "Room", newRoomId), {
+          id: newRoomId,
+          type: type,
+          status: "available"
         });
-        alert(`Room "${roomId}" created/updated successfully!`);
-        createRoomForm.reset();
-        loadAllRooms(); // refresh table
+        e.target.dataset.next = nextNumber + 1;
+        loadRoomTypesWithRooms(); // Refresh list
       } catch (err) {
-        console.error("Error creating room:", err);
-        alert(err.message);
+        alert("Error creating room: " + err.message);
       }
     });
-  }
-  
-  // 7. Load All Rooms => fill table
-  async function loadAllRooms() {
-    roomsTableBody.innerHTML = "";
-    const snap = await getDocs(collection(db, "Room"));
-    snap.forEach((docSnap) => {
-      const r = docSnap.data();
-      const row = document.createElement("tr");
-      row.dataset.docId = docSnap.id; // store "R101" or whatever
-  
-      // We'll store the amenities as a comma-separated string
-      const amStr = (r.amenities || []).join(", ");
-  
-      row.innerHTML = `
-        <td>${r.id || ""}</td>
-        <td>${r.type || ""}</td>
-        <td>${r.price || 0}</td>
-        <td>${amStr}</td>
-        <td>
-          <button class="action-btn edit">Edit</button>
-          <button class="action-btn delete">Delete</button>
-        </td>
-      `;
-  
-      // Edit
-      const editBtn = row.querySelector(".edit");
-      editBtn.addEventListener("click", () => editRoom(row));
-  
-      // Delete
-      const deleteBtn = row.querySelector(".delete");
-      deleteBtn.addEventListener("click", () => deleteRoom(row));
-  
-      roomsTableBody.appendChild(row);
-    });
-  }
-  
-  // 8. Edit Room => only type, price, and amenities are editable (skip ID/bookedDates)
-  function editRoom(row) {
-    const docId = row.dataset.docId;
-    const typeCell  = row.cells[1];
-    const priceCell = row.cells[2];
-    const amCell    = row.cells[3];
-  
-    const currentType  = typeCell.innerText;
-    const currentPrice = priceCell.innerText;
-    const currentAm    = amCell.innerText;
-  
-    // Convert to inputs
-    typeCell.innerHTML  = `<input type="text" value="${currentType}" />`;
-    priceCell.innerHTML = `<input type="number" value="${currentPrice}" />`;
-    amCell.innerHTML    = `<input type="text" value="${currentAm}" />`;
-  
-    // Switch Edit btn to Save
-    const editBtn = row.querySelector(".edit");
-    editBtn.textContent = "Save";
-    editBtn.replaceWith(editBtn.cloneNode(true));
-    const newEditBtn = row.querySelector(".edit");
-    newEditBtn.addEventListener("click", () => saveRoomEdits(row));
-  }
-  
-  async function saveRoomEdits(row) {
-    const docId = row.dataset.docId;
-    const typeCell  = row.cells[1];
-    const priceCell = row.cells[2];
-    const amCell    = row.cells[3];
-  
-    const newType  = typeCell.querySelector("input").value.trim();
-    const newPrice = parseFloat(priceCell.querySelector("input").value.trim()) || 0;
-    const newAm    = amCell.querySelector("input").value.trim();
-  
-    // Parse amenities
-    const newAmenities = newAm ? newAm.split(",").map(a => a.trim()) : [];
-  
-    try {
-      await updateDoc(doc(db, "Room", docId), {
-        type: newType,
-        price: newPrice,
-        amenities: newAmenities
-      });
-      // revert cells to text
-      typeCell.innerHTML  = newType;
-      priceCell.innerHTML = newPrice;
-      amCell.innerHTML    = newAmenities.join(", ");
-  
-      // revert button to Edit
-      const editBtn = row.querySelector(".edit");
-      editBtn.textContent = "Edit";
-      editBtn.replaceWith(editBtn.cloneNode(true));
-      const restoredBtn = row.querySelector(".edit");
-      restoredBtn.addEventListener("click", () => editRoom(row));
-  
-      alert(`Room "${docId}" updated successfully!`);
-    } catch (err) {
-      console.error("Error updating room:", err);
-      alert(err.message);
-    }
-  }
-  
-  // 9. Delete Room => remove doc from "Room"
-  async function deleteRoom(row) {
-    const docId = row.dataset.docId;
-    if (!confirm(`Are you sure you want to delete room "${docId}"?`)) return;
-  
-    try {
-      await deleteDoc(doc(db, "Room", docId));
-      row.remove();
-      alert(`Room "${docId}" deleted!`);
-    } catch (err) {
-      console.error("Error deleting room:", err);
-      alert(err.message);
-    }
-  }
-  
-  // 10. Load All Bookings => join with Guest
-  async function loadAllBookings() {
-    bookingsTableBody.innerHTML = "";
-    const snap = await getDocs(collection(db, "Booking"));
-  
-    // We'll do a small join: for each booking.guestID, load the Guest doc
-    for (const bDoc of snap.docs) {
-      const b = bDoc.data();
-      const bookingId = bDoc.id; // e.g. "B101"
-      const guestID   = b.guestID || "";
-      let guestName   = "";
-      let guestEmail  = "";
-      let guestPhone  = "";
-  
-      // fetch Guest doc
-      if (guestID) {
-        const gSnap = await getDoc(doc(db, "Guest", guestID));
-        if (gSnap.exists()) {
-          const gData = gSnap.data();
-          guestName  = `${gData.fName || ""} ${gData.sName || ""}`;
-          guestEmail = gData.email || "";
-          guestPhone = gData.phoneNum || "";
+
+    // Add delete room handlers
+    typeContainer.querySelectorAll('.delete').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        const roomId = btn.dataset.id;
+        if (confirm(`Delete room ${roomId}?`)) {
+          await deleteDoc(doc(db, "Room", roomId));
+          loadRoomTypesWithRooms();
         }
-      }
-  
-      const row = document.createElement("tr");
-      row.innerHTML = `
-        <td>${bookingId}</td>
-        <td>${b.roomID || ""}</td>
-        <td>${b.checkInDate || ""}</td>
-        <td>${b.checkOutDate || ""}</td>
-        <td>${guestName}</td>
-        <td>${guestEmail}</td>
-        <td>${guestPhone}</td>
-        <td>${b.status || ""}</td>
-      `;
-      bookingsTableBody.appendChild(row);
-    }
+      });
+    });
+
+    roomTypesList.appendChild(typeContainer);
   }
+}
+
+// Show edit type modal
+async function showEditTypeModal(typeName, typeData) {
+  currentEditingType = typeName;
+  const amenitiesSnap = await getDocs(collection(db, "Amenity"));
   
+  // Clear previous content
+  document.getElementById("editTypeAmenities").innerHTML = '';
+  document.getElementById("editTypeImagePreview").innerHTML = '';
+
+  // Populate form
+  document.getElementById("editTypeName").value = typeName;
+  document.getElementById("editTypePrice").value = typeData.price || 0;
+
+  // Add amenities checkboxes
+  amenitiesSnap.forEach(doc => {
+    const amenityId = doc.id;
+    const label = document.createElement("label");
+    label.innerHTML = `
+      <input type="checkbox" value="${amenityId}" 
+        ${(typeData.amenities || []).includes(amenityId) ? 'checked' : ''}>
+      <img src="${doc.data().image}" alt="${amenityId}">
+      ${amenityId}
+    `;
+    document.getElementById("editTypeAmenities").appendChild(label);
+  });
+
+  // Show existing images
+  (typeData.images || []).forEach(img => {
+    const imgElem = document.createElement("img");
+    imgElem.src = img;
+    document.getElementById("editTypeImagePreview").appendChild(imgElem);
+  });
+
+  editTypeModal.style.display = "block";
+}
+
+// Handle type editing
+editTypeForm.addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const newName = document.getElementById("editTypeName").value.trim();
+  const price = parseFloat(document.getElementById("editTypePrice").value);
+  const amenities = Array.from(document.querySelectorAll('#editTypeAmenities input:checked'))
+    .map(input => input.value);
+  const files = Array.from(document.getElementById("editTypeImages").files);
+
+  try {
+    // Upload new images
+    const existingImages = Array.from(document.getElementById("editTypeImagePreview").children)
+      .map(img => img.src);
+    const newImages = await Promise.all(files.map(file => 
+      new Promise(resolve => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result);
+        reader.readAsDataURL(file);
+      })
+    ));
+    
+    const allImages = [...existingImages, ...newImages];
+
+    // Update type document
+    await setDoc(doc(db, "RoomType", currentEditingType), {
+      price,
+      amenities,
+      images: allImages
+    }, { merge: true });
+
+    // Handle name change
+    if (newName !== currentEditingType) {
+      // Update all rooms of this type
+      const roomsSnap = await getDocs(query(
+        collection(db, "Room"), 
+        where("type", "==", currentEditingType)
+      ));
+
+      const batch = writeBatch(db);
+      roomsSnap.forEach(doc => {
+        batch.update(doc.ref, { type: newName });
+      });
+      await batch.commit();
+
+      // Rename the type document
+      await setDoc(doc(db, "RoomType", newName), {
+        price,
+        amenities,
+        images: allImages
+      });
+      await deleteDoc(doc(db, "RoomType", currentEditingType));
+    }
+
+    editTypeModal.style.display = "none";
+    loadRoomTypesWithRooms();
+  } catch (err) {
+    alert("Error updating room type: " + err.message);
+  }
+});
+
+// Load amenities
+async function loadAmenities() {
+  const snap = await getDocs(collection(db, "Amenity"));
+  amenitiesList.innerHTML = "";
+
+  snap.forEach(doc => {
+    const div = document.createElement("div");
+    div.className = "amenity-item";
+    div.innerHTML = `
+      <img src="${doc.data().image}" alt="${doc.id}">
+      <span>${doc.id}</span>
+      <button class="delete-amenity" data-id="${doc.id}">&times;</button>
+    `;
+
+    // Add delete amenity handler
+    div.querySelector('.delete-amenity').addEventListener('click', async (e) => {
+      e.stopPropagation();
+      const amenityId = e.target.dataset.id;
+      if (confirm(`Delete amenity ${amenityId}?`)) {
+        await deleteDoc(doc(db, "Amenity", amenityId));
+        loadAmenities();
+      }
+    });
+
+    amenitiesList.appendChild(div);
+  });
+}
+
+// Handle amenity creation
+if (amenityForm) {
+  amenityForm.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const name = document.getElementById("amenityName").value.trim();
+    const file = document.getElementById("amenityImage").files[0];
+    
+    if (!name || !file) return;
+    
+    const reader = new FileReader();
+    reader.onloadend = async () => {
+      try {
+        await setDoc(doc(db, "Amenity", name), {
+          image: reader.result
+        });
+        loadAmenities();
+        amenityForm.reset();
+      } catch (err) {
+        alert("Error creating amenity: " + err.message);
+      }
+    };
+    reader.readAsDataURL(file);
+  });
+}
+
+// Load all bookings
+async function loadAllBookings() {
+  bookingsTableBody.innerHTML = "";
+  const snap = await getDocs(collection(db, "Booking"));
+  const bookings = [];
+
+  for (const bDoc of snap.docs) {
+    const b = bDoc.data();
+    const bookingId = bDoc.id;
+    const guestID = b.guestID || "";
+    let guestName = "";
+    let guestEmail = "";
+    let guestPhone = "";
+
+    if (guestID) {
+      const gSnap = await getDoc(doc(db, "Guest", guestID));
+      if (gSnap.exists()) {
+        const gData = gSnap.data();
+        guestName = `${gData.fName || ""} ${gData.sName || ""}`.trim() || 'N/A';
+        guestEmail = gData.email || 'N/A';
+        guestPhone = gData.phoneNum || 'N/A';
+      }
+    }
+
+    bookings.push({
+      data: b,
+      bookingId,
+      guestName,
+      guestEmail,
+      guestPhone,
+      checkInDate: b.checkInDate || "",
+      status: b.status || "unpaid"
+    });
+  }
+
+  // Sort bookings: unpaid first, then by check-in date
+  bookings.sort((a, b) => {
+    if (a.status === "unpaid" && b.status !== "unpaid") return -1;
+    if (b.status === "unpaid" && a.status !== "unpaid") return 1;
+    return new Date(a.checkInDate) - new Date(b.checkInDate);
+  });
+
+  // Populate table
+  bookings.forEach(b => {
+    const row = document.createElement("tr");
+    row.innerHTML = `
+      <td>${b.bookingId}</td>
+      <td>${b.data.roomID}</td>
+      <td>${b.checkInDate}</td>
+      <td>${b.data.checkOutDate}</td>
+      <td>${b.guestName}</td>
+      <td>${b.guestEmail}</td>
+      <td>${b.guestPhone}</td>
+      <td>${b.status}</td>
+    `;
+    bookingsTableBody.appendChild(row);
+  });
+}
