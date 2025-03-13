@@ -155,6 +155,31 @@
         </div>
     </div>
 
+    <!-- Extras Modal -->
+    <div id="extrasModal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h3>Edit Extras</h3>
+            <form id="extrasForm">
+                <div>
+                    <input type="checkbox" id="extraBreakfast" name="extras" value="Breakfast" data-price="20">
+                    <label for="extraBreakfast">Breakfast ($20)</label>
+                </div>
+                <div>
+                    <input type="checkbox" id="extraParking" name="extras" value="Parking" data-price="15">
+                    <label for="extraParking">Parking ($15)</label>
+                </div>
+                <div>
+                    <input type="checkbox" id="extraBed" name="extras" value="Extra Bed" data-price="30">
+                    <label for="extraBed">Extra Bed ($30)</label>
+                </div>
+                <p>Total Extras Cost: $<span id="extrasTotal">0.00</span></p>
+                <button type="button" onclick="calculateExtras()">Calculate Extras</button>
+                <button type="button" onclick="saveExtras()">Save &amp; Pay for Extras</button>
+            </form>
+        </div>
+    </div>
+
     <script type="module" src="js/profile.js"></script>
 </body>
 </html>
