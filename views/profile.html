@@ -2,184 +2,29 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>My Profile</title>
-    <link rel="stylesheet" href="css/profile.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>User Profile</title>
+    <link rel="stylesheet" href="profile.css">
 </head>
 <body>
-    <div class="container">
-        <!-- Add Home Button -->
-        <div class="home-button-container">
-            <a href="home" class="home-button">Home</a>
-        </div>
-
-        <h1>My Profile</h1>
+    <div class="profile-container">
+        <!-- Profile Picture -->
+        <img id="profile-image" class="profile-image" src="../images/account-icon.png" alt="Profile Picture">
         
-        <!-- Personal Details Section -->
-        <div class="profile-section">
-            <h2>Personal Information</h2>
-            <div id="personalDetails">
-                <p>Name: <span id="displayName"></span> <button onclick="toggleEdit()">Edit</button></p>
-                <p>Email: <span id="displayEmail"></span></p>
-                <p>Phone: <span id="displayPhone"></span></p>
-                <p>Password: <span id="displayPass">********</span>
-                    <button onclick="togglePassword()">Show</button>
-                </p>
-            </div>
-            
-            <!-- Edit Form -->
-            <div id="editForm" style="display: none;">
-                <input type="text" id="editFName" placeholder="First Name">
-                <input type="text" id="editSName" placeholder="Last Name">
-                <input type="tel" id="editPhone" placeholder="Phone Number">
-                <input type="password" id="editPassword" placeholder="New Password">
-                <button onclick="saveChanges()">Save Changes</button>
-                <button onclick="cancelEdit()">Cancel</button>
-            </div>
+        <h2>User Profile</h2>
+        <div class="profile-info">
+            <p><strong>First Name:</strong> <span id="fName">Loading...</span></p>
+            <p><strong>Last Name:</strong> <span id="sName">Loading...</span></p>
+            <p><strong>Email:</strong> <span id="email">Loading...</span></p>
+            <p><strong>Phone Number:</strong> <span id="phoneNum">Loading...</span></p>
+            <p><strong>Role:</strong> <span id="role">Loading...</span></p>
         </div>
-
-        <!-- Bookings Section -->
-        <div class="profile-section">
-            <h2>My Bookings</h2>
-            <div id="bookingsList"><p>Loading bookings...</p></div>
-        </div>
+        
+        <!-- Buttons -->
+        <button id="edit-profile-btn">Edit Profile</button>
+        <button id="logout-btn">Logout</button>
     </div>
 
-    <!-- Verification Modals -->
-    <div id="codeModal" class="modal">
-        <div class="modal-content">
-            <span class="close">&times;</span>
-            <h3>Email Verification</h3>
-            <p>Enter the 6-digit code sent to your email</p>
-            <input type="text" id="verificationCode" maxlength="6" placeholder="123456">
-            <button onclick="submitCode()">Verify</button>
-            <p id="codeError" class="error-message"></p>
-        </div>
-    </div>
-
-    <div id="passwordModal" class="modal">
-        <div class="modal-content">
-            <span class="close">&times;</span>
-            <h3>Change Password</h3>
-            <input type="password" id="newPassword" placeholder="New Password">
-            <button onclick="submitNewPassword()">Update Password</button>
-        </div>
-    </div>
-
-    <!-- Enhanced Payment Modal -->
-    <div id="paymentModal" class="modal">
-        <div class="modal-content payment-modal">
-            <span class="close">&times;</span>
-            <h2 class="payment-title">Complete Payment</h2>
-            <div class="payment-section">
-                <h3>Personal Information</h3>
-                <div class="payment-row">
-                    <div class="payment-group">
-                        <label>Full Name</label>
-                        <input type="text" id="fullName" value="John Doe" class="payment-input">
-                    </div>
-                    <div class="payment-group">
-                        <label>Email</label>
-                        <input type="email" id="email" value="john@demo.com" class="payment-input">
-                    </div>
-                </div>
-                <div class="payment-row">
-                    <div class="payment-group">
-                        <label>Phone Number</label>
-                        <input type="tel" id="phone" value="+353 87 123 4567" class="payment-input">
-                    </div>
-                </div>
-            </div>
-
-            <div class="payment-section">
-                <h3>Billing Address</h3>
-                <div class="payment-row">
-                    <div class="payment-group">
-                        <label>Street Address</label>
-                        <input type="text" id="street" value="123 Hotel St" class="payment-input">
-                    </div>
-                </div>
-                <div class="payment-row">
-                    <div class="payment-group">
-                        <label>City</label>
-                        <input type="text" id="city" value="Dublin" class="payment-input">
-                    </div>
-                    <div class="payment-group">
-                        <label>County</label>
-                        <input type="text" id="county" value="Dublin" class="payment-input">
-                    </div>
-                    <div class="payment-group">
-                        <label> Eircode</label>
-                        <input type="text" id="Eircode" value="F94 A123" class="payment-input">
-                    </div>
-                </div>
-                <div class="payment-row">
-                    <div class="payment-group">
-                        <label>Country</label>
-                        <input type="text" id="country" value="Ireland" class="payment-input">
-                    </div>
-                </div>
-            </div>
-
-            <div class="payment-section">
-                <h3>Payment Details</h3>
-                <div class="payment-row">
-                    <div class="payment-group">
-                        <label>Cardholder Name</label>
-                        <input type="text" id="cardName" value="JOHN DOE" class="payment-input">
-                    </div>
-                </div>
-                <div class="payment-row">
-                    <div class="payment-group">
-                        <label>Card Number</label>
-                        <input type="text" id="cardNumber" value="4242 4242 4242 4242" class="payment-input">
-                    </div>
-                </div>
-                <div class="payment-row">
-                    <div class="payment-group">
-                        <label>Expiry Date</label>
-                        <input type="text" id="expiryDate" value="12/30" class="payment-input">
-                    </div>
-                    <div class="payment-group">
-                        <label>CVC</label>
-                        <input type="text" id="cvc" value="123" class="payment-input">
-                    </div>
-                </div>
-            </div>
-
-            <div class="payment-footer">
-                <button class="payment-submit-btn" onclick="submitPayment()">
-                    Pay $<span id="paymentAmount">0.00</span> Now
-                </button>
-                <p class="payment-disclaimer">This is a demo payment system. No real transactions will be processed.</p>
-            </div>
-        </div>
-    </div>
-
-    <!-- Extras Modal -->
-    <div id="extrasModal" class="modal">
-        <div class="modal-content">
-            <span class="close">&times;</span>
-            <h3>Edit Extras</h3>
-            <form id="extrasForm">
-                <div>
-                    <input type="checkbox" id="extraBreakfast" name="extras" value="Breakfast" data-price="20">
-                    <label for="extraBreakfast">Breakfast ($20)</label>
-                </div>
-                <div>
-                    <input type="checkbox" id="extraParking" name="extras" value="Parking" data-price="15">
-                    <label for="extraParking">Parking ($15)</label>
-                </div>
-                <div>
-                    <input type="checkbox" id="extraBed" name="extras" value="Extra Bed" data-price="30">
-                    <label for="extraBed">Extra Bed ($30)</label>
-                </div>
-                <p>Total Extras Cost: $<span id="extrasTotal">0.00</span></p>
-                <button type="button" onclick="calculateExtras()">Calculate Extras</button>
-                <button type="button" onclick="saveExtras()">Save &amp; Pay for Extras</button>
-            </form>
-        </div>
-    </div>
-
-    <script type="module" src="js/profile.js"></script>
+    <script type="module" src="profile.js"></script>
 </body>
 </html>
