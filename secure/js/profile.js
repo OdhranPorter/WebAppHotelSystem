@@ -66,7 +66,7 @@ onAuthStateChanged(auth, async (user) => {
         if (!userDoc.exists()) return;
 
         const userData = userDoc.data();
-        document.getElementById('displayName').textContent = 
+        document.getElementById('displayName').textContent =
             `${userData.fName} ${userData.sName}`;
         document.getElementById('displayEmail').textContent = user.email;
         document.getElementById('displayPhone').textContent = userData.phoneNum || 'N/A';
@@ -82,13 +82,9 @@ onAuthStateChanged(auth, async (user) => {
             return;
         }
 
-        // Sort bookings: pending first, then by check-in date
+        // Sort bookings: order by check-in date
         const bookingsDocs = bookingsSnapshot.docs.map(d => ({ id: d.id, ...d.data() }));
-        bookingsDocs.sort((a, b) => {
-            if (a.status === 'pending' && b.status !== 'pending') return -1;
-            if (b.status === 'pending' && a.status !== 'pending') return 1;
-            return new Date(a.checkInDate) - new Date(b.checkInDate);
-        });
+        bookingsDocs.sort((a, b) => new Date(a.checkInDate) - new Date(b.checkInDate));
 
         for (const booking of bookingsDocs) {
             try {
@@ -118,34 +114,24 @@ onAuthStateChanged(auth, async (user) => {
 function createBookingCard(booking, roomType, typeData, bookingId) {
     const status = booking.status.toLowerCase();
     const nights = calculateNights(booking);
-    const totalPrice = typeData.price * nights;
+    const roomCost = typeData.price * nights;
 
-    // If extras exist and there's at least one extra, show a Remove Extras button.
-    const extrasButtons = (booking.extras && booking.extras.length > 0) ? 
-        `<button class="remove-extras-btn" onclick="removeExtras('${bookingId}')">
-            Remove Extras
-        </button>` : "";
+    // Start with the Cancel Booking button
+    let buttons = `<button class="cancel-btn" onclick="cancelBooking('${bookingId}', '${status}')">
+                        Cancel Booking
+                   </button>`;
 
-    const buttons = status === 'pending' ? `
-        <button class="cancel-btn" onclick="cancelBooking('${bookingId}', '${status}')">
-            Cancel Booking
-        </button>
-        <button class="pay-btn" onclick="showPaymentModal('${bookingId}', ${typeData.price}, ${nights})">
-            Pay Now (€${totalPrice})
-        </button>
-        <button class="edit-extras-btn" onclick="showExtrasModal('${bookingId}')">
-            Edit Extras
-        </button>
-        ${extrasButtons}
-    ` : `
-        <button class="cancel-btn" onclick="cancelBooking('${bookingId}', '${status}')">
-            Cancel Booking
-        </button>
-        <button class="edit-extras-btn" onclick="showExtrasModal('${bookingId}')">
-            Edit Extras
-        </button>
-        ${extrasButtons}
-    `;
+    // If status is pending (if that ever occurs), show a Pay Now button.
+    // Otherwise, if status is "booked" or "checked in", show the Edit Extras button.
+    if (status === 'pending') {
+        buttons += `<button class="pay-btn" onclick="showPaymentModal('${bookingId}', ${typeData.price}, ${nights})">
+                        Pay Now (€${roomCost})
+                    </button>`;
+    } else if (status === 'booked' || status === 'checked in') {
+        buttons += `<button class="edit-extras-btn" onclick="showExtrasModal('${bookingId}')">
+                        Edit Extras
+                    </button>`;
+    }
 
     const card = document.createElement('div');
     card.className = `booking-card ${status}`;
@@ -200,14 +186,45 @@ function getAmenityIcon(amenity) {
     return icons[name] || 'images/icon_amenity.png';
 }
 
-// Extras Modal Functions
+// ---------------- Extras Modal Functions ----------------
+
+// Now extras can be edited only when the booking is "checked in" – so showExtrasModal is called only for those bookings.
 window.showExtrasModal = function(bookingId) {
-    currentExtrasBooking = { id: bookingId, extrasCost: 0, extras: [] };
+    currentExtrasBooking = { 
+        id: bookingId, 
+        extrasCost: 0, 
+        extras: []
+    };
+    // Reset the form and total cost display
     document.getElementById('extrasForm').reset();
     document.getElementById('extrasTotal').textContent = "0.00";
     extrasModal.style.display = 'block';
+
+    // Attach change listeners to update total automatically
+    const checkboxes = document.querySelectorAll('#extrasForm input[name="extras"]');
+    checkboxes.forEach(checkbox => {
+        checkbox.addEventListener('change', window.calculateExtras);
+    });
+
+    // Fetch current extras from Firebase and pre-populate the checkboxes
+    getDoc(doc(db, "Booking", bookingId))
+        .then((docSnap) => {
+            if (docSnap.exists()) {
+                let bookingData = docSnap.data();
+                if (bookingData.extras && Array.isArray(bookingData.extras)) {
+                    checkboxes.forEach(checkbox => {
+                        checkbox.checked = bookingData.extras.includes(checkbox.value);
+                    });
+                    window.calculateExtras();
+                }
+            }
+        })
+        .catch((error) => {
+            console.error("Error fetching extras data:", error);
+        });
 };
 
+// Automatically calculate extras total when checkboxes change
 window.calculateExtras = function() {
     const extrasForm = document.getElementById('extrasForm');
     const checkboxes = extrasForm.querySelectorAll('input[name="extras"]');
@@ -226,27 +243,31 @@ window.calculateExtras = function() {
 };
 
 window.saveExtras = async function() {
-    // Recalculate extras in case the user did not press "Calculate Extras"
+    // Recalculate extras to ensure latest selections are recorded
     window.calculateExtras();
 
-    // Ensure at least one extra is selected
+    // Require at least one extra to be selected
     if (currentExtrasBooking.extrasCost === 0) {
         alert("Please select at least one extra before proceeding.");
         return;
     }
 
     try {
+        // Update the booking document with extras details
         await updateDoc(doc(db, "Booking", currentExtrasBooking.id), {
             extras: currentExtrasBooking.extras,
             extrasCost: currentExtrasBooking.extrasCost,
             extrasPaid: false
         });
-        alert("Extras updated. Now please pay for the extras.");
+        alert("Extras updated.");
         extrasModal.style.display = 'none';
+
+        // Since the room has already been paid (status "checked in"),
+        // extras are paid separately.
         currentPaymentBooking = {
             id: currentExtrasBooking.id,
             amount: currentExtrasBooking.extrasCost,
-            extras: true  // flag indicates extras payment
+            extras: true
         };
         document.getElementById('paymentAmount').textContent = currentPaymentBooking.amount.toFixed(2);
         paymentModal.style.display = 'block';
@@ -256,24 +277,10 @@ window.saveExtras = async function() {
     }
 };
 
-// New Global Function to Remove Extras
-window.removeExtras = async function(bookingId) {
-    try {
-        await updateDoc(doc(db, "Booking", bookingId), {
-            extras: [],
-            extrasCost: 0,
-            extrasPaid: false
-        });
-        alert("Extras removed successfully.");
-        location.reload();
-    } catch (error) {
-        console.error("Error removing extras:", error);
-        alert("Failed to remove extras: " + error.message);
-    }
-};
+// ---------------- Payment Handling ----------------
 
-// Payment handling
 window.showPaymentModal = function(bookingId, price, nights) {
+    // For room payments (before check in), update status to "booked" upon payment.
     currentPaymentBooking = {
         id: bookingId,
         amount: price * nights
@@ -322,15 +329,17 @@ window.submitPayment = async function() {
         }
 
         if (currentPaymentBooking.extras) {
+            // For extras payment after check in, mark extras as paid.
             await updateDoc(doc(db, "Booking", currentPaymentBooking.id), {
                 extrasPaid: true
             });
-            alert('✅ Extras payment successful!\nExtras added to your booking!');
+            alert('✅ Extras payment successful!\nExtras added to your booking.');
         } else {
+            // For room payment, update status to "booked"
             await updateDoc(doc(db, "Booking", currentPaymentBooking.id), {
-                status: 'confirmed'
+                status: 'booked'
             });
-            alert('✅ Payment successful!\nBooking confirmed!');
+            alert('✅ Payment successful!\nBooking confirmed as "booked".');
         }
         location.reload();
     } catch (error) {
@@ -343,25 +352,27 @@ window.submitPayment = async function() {
     }
 };
 
-// Booking cancellation
+// ---------------- Booking Cancellation ----------------
+
 window.cancelBooking = async (bookingId, status) => {
-    const message = status === 'pending' ? 
-        'Cancel this pending booking?' : 
-        'Cancel this confirmed booking? There may be cancellation fees.';
+    const message = status === 'booked' ? 
+        'Cancel this booked reservation?' : 
+        'Cancel this checked-in booking? There may be cancellation fees.';
     
     if (confirm(message)) {
         try {
             await deleteDoc(doc(db, "Booking", bookingId));
-            alert('Booking cancelled successfully');
+            alert('Booking cancelled successfully.');
             location.reload();
         } catch (error) {
             console.error("Cancellation failed:", error);
-            alert('Failed to cancel booking');
+            alert('Failed to cancel booking.');
         }
     }
 };
 
-// Password and profile management
+// ---------------- Password and Profile Management ----------------
+
 window.togglePassword = async () => {
     currentAction = 'showPassword';
     codeModal.style.display = 'block';
@@ -373,7 +384,7 @@ async function sendVerificationCode() {
         await new Promise(resolve => setTimeout(resolve, 1500));
         alert('Verification code "sent" to your email\nUse test code: 123456');
     } catch (error) {
-        alert('Verification system error');
+        alert('Verification system error.');
     }
 }
 
@@ -405,7 +416,7 @@ window.submitNewPassword = async () => {
             password: newPassword
         });
         passwordModal.style.display = 'none';
-        alert('Password updated successfully');
+        alert('Password updated successfully.');
     } catch (error) {
         alert('Password update failed: ' + error.message);
     }
