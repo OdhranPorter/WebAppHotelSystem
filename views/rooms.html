@@ -1,31 +1,58 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Room Bookings</title>
-    <link rel="stylesheet" href="rooms.css">
+  <meta charset="UTF-8" />
+  <title>Available Rooms</title>
+  <!-- Link to your separate rooms.css for styling -->
+  <link rel="stylesheet" href="css/rooms.css" />
 </head>
 <body>
-    <div class="container">
-        <!-- Room Card Template (Hidden) -->
-        <template id="room-card-template">
-            <div class="room-card">
-                <img class="room-image" src="" alt="Room Image">
-                <h3 class="room-id"></h3>
-                <p><strong>Type:</strong> <span class="room-type"></span></p>
-                <p><strong>Price:</strong> €<span class="room-price"></span> per night</p>
-                <p><strong>Amenities:</strong> <span class="room-amenities"></span></p>
-                <p><strong>Booked Dates:</strong> <span class="room-dates"></span></p>
-            </div>
-        </template>
+  <header>
+    <nav style="display: flex; align-items: center; justify-content: space-between;">
+      <!-- Left side links -->
+      <div>
+        <a href="home">Home</a>
+        <a href="rooms">Rooms</a>
+      </div>
+      <!-- Right side: Account or Login -->
+      <div style="display: flex; align-items: center;">
+        <div id="accountDropdown" style="display: none; position: relative;">
+          <button id="accountBtn" style="background: #555; color: #fff; padding: 0.5rem 1rem; border: none;">
+            Account
+          </button>
+          <div id="accountMenu"
+               style="position: absolute; top: 2.5rem; right: 0; background-color: #fff; color: #333;
+                      padding: 0.5rem; display: none; box-shadow: 0 2px 5px rgba(0,0,0,0.3);">
+            <a href="profile"
+               style="display: block; padding: 0.5rem 1rem; color: #333; text-decoration: none;">
+              Profile
+            </a>
+            <button id="logoutBtn"
+                    style="display: block; width: 100%; text-align: left; padding: 0.5rem 1rem; border: none; background: none; cursor: pointer;">
+              Logout
+            </button>
+          </div>
+        </div>
+        <a id="loginBtn" href="login" style="margin-left: 1rem;">Login</a>
+      </div>
+    </nav>
+  </header>
 
-        <!-- Container for displaying rooms -->
-        <div id="rooms-container"></div>
+  <main>
+    <h1>Our Rooms</h1>
+    <p>Browse the latest room availability and amenities.</p>
 
-        <button id="logout-btn">Logout</button>
+    <!-- Container for room cards -->
+    <div id="roomsContainer" class="rooms-container">
+      <!-- Cards inserted by rooms.js -->
     </div>
+  </main>
 
-    <script type="module" src="rooms.js"></script>
+  <footer>
+    <p>© 2025 MyHotel. All rights reserved.</p>
+  </footer>
+
+  <!-- Import the script to fetch & display rooms with amenity icons, plus auth nav logic -->
+  <script type="module" src="js/rooms.js"></script>
 </body>
 </html>
