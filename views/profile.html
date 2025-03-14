@@ -85,7 +85,7 @@
                 <div class="payment-row">
                     <div class="payment-group">
                         <label>Phone Number</label>
-                        <input type="tel" id="phone" value="+353 87 123 4567" class="payment-input">
+                        <input type="tel" id="phone" value="+1 555 123 4567" class="payment-input">
                     </div>
                 </div>
             </div>
@@ -101,21 +101,21 @@
                 <div class="payment-row">
                     <div class="payment-group">
                         <label>City</label>
-                        <input type="text" id="city" value="Dublin" class="payment-input">
+                        <input type="text" id="city" value="New York" class="payment-input">
                     </div>
                     <div class="payment-group">
-                        <label>County</label>
-                        <input type="text" id="county" value="Dublin" class="payment-input">
+                        <label>State</label>
+                        <input type="text" id="state" value="NY" class="payment-input">
                     </div>
                     <div class="payment-group">
-                        <label> Eircode</label>
-                        <input type="text" id="Eircode" value="F94 A123" class="payment-input">
+                        <label>ZIP Code</label>
+                        <input type="text" id="zip" value="10001" class="payment-input">
                     </div>
                 </div>
                 <div class="payment-row">
                     <div class="payment-group">
                         <label>Country</label>
-                        <input type="text" id="country" value="Ireland" class="payment-input">
+                        <input type="text" id="country" value="United States" class="payment-input">
                     </div>
                 </div>
             </div>
@@ -155,30 +155,32 @@
         </div>
     </div>
 
-    <!-- Extras Modal -->
-    <div id="extrasModal" class="modal">
-        <div class="modal-content">
-            <span class="close">&times;</span>
-            <h3>Edit Extras</h3>
-            <form id="extrasForm">
-                <div>
-                    <input type="checkbox" id="extraBreakfast" name="extras" value="Breakfast" data-price="20">
-                    <label for="extraBreakfast">Breakfast ($20)</label>
-                </div>
-                <div>
-                    <input type="checkbox" id="extraParking" name="extras" value="Parking" data-price="15">
-                    <label for="extraParking">Parking ($15)</label>
-                </div>
-                <div>
-                    <input type="checkbox" id="extraBed" name="extras" value="Extra Bed" data-price="30">
-                    <label for="extraBed">Extra Bed ($30)</label>
-                </div>
-                <p>Total Extras Cost: $<span id="extrasTotal">0.00</span></p>
-                <button type="button" onclick="calculateExtras()">Calculate Extras</button>
-                <button type="button" onclick="saveExtras()">Save &amp; Pay for Extras</button>
-            </form>
-        </div>
+   
+<!-- Extras Modal -->
+<div id="extrasModal" class="modal">
+    <div class="modal-content">
+        <span class="close">&times;</span>
+        <h3>Edit Extras</h3>
+        <form id="extrasForm">
+            <div>
+                <input type="checkbox" id="extraBreakfast" name="extras" value="Breakfast" data-price="20">
+                <label for="extraBreakfast">Breakfast (€20)</label>
+            </div>
+            <div>
+                <input type="checkbox" id="extraParking" name="extras" value="Parking" data-price="15">
+                <label for="extraParking">Parking (€15)</label>
+            </div>
+            <div>
+                <input type="checkbox" id="extraBed" name="extras" value="Extra Bed" data-price="30">
+                <label for="extraBed">Extra Bed (€30)</label>
+            </div>
+            <p>Total Extras Cost: €<span id="extrasTotal">0.00</span></p>
+            <button type="button" onclick="saveExtras()">Save &amp; Pay for Extras</button>
+        </form>
     </div>
+</div>
+
+
 
     <script type="module" src="js/profile.js"></script>
 </body>
