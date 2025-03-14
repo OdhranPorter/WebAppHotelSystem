@@ -143,8 +143,13 @@ document.addEventListener("DOMContentLoaded", async () => {
       // Book Now action
       const bookBtn = card.querySelector(".book-now-btn");
       bookBtn.addEventListener("click", () => {
-        // Redirect to booking page without requiring login
-        window.location.href = `booking?roomType=${encodeURIComponent(roomType)}`;
+        const user = auth.currentUser;
+        if (!user) {
+          const redirectUrl = `booking?roomType=${encodeURIComponent(roomType)}`;
+          window.location.href = `login?redirect=${encodeURIComponent(redirectUrl)}`;
+        } else {
+          window.location.href = `booking?roomType=${encodeURIComponent(roomType)}`;
+        }
       });
 
       roomsContainer.appendChild(card);
