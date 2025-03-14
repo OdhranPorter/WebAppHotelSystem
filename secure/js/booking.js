@@ -2,7 +2,7 @@
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.3.0/firebase-app.js";
 import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.3.0/firebase-auth.js";
-import { 
+import {
   getFirestore,
   collection,
   query,
@@ -11,9 +11,7 @@ import {
   doc,
   getDoc,
   runTransaction,
-  setDoc,
-  updateDoc,
-  arrayUnion
+  setDoc
 } from "https://www.gstatic.com/firebasejs/11.3.0/firebase-firestore.js";
 
 const firebaseConfig = {
@@ -73,13 +71,29 @@ onAuthStateChanged(auth, async (user) => {
 
     // Calculate fully booked dates
     const bookedCounts = new Map();
-    roomsSnapshot.forEach(roomDoc => {
-      const bookedDates = roomDoc.data().bookedDates || [];
-      bookedDates.forEach(date => {
-        bookedCounts.set(date, (bookedCounts.get(date) || 0) + 1);
-      });
-    });
+    for (const roomDoc of roomsSnapshot.docs) {
+      const bookingsQuery = query(
+        collection(db, "Booking"),
+        where("roomID", "==", roomDoc.id)
+      );
+      const bookingsSnapshot = await getDocs(bookingsQuery);
 
+      for (const bookingDoc of bookingsSnapshot.docs) {
+        const bookingData = bookingDoc.data();
+        const bookingStart = new Date(bookingData.checkInDate);
+        const bookingEnd = new Date(bookingData.checkOutDate);
+
+        // Generate all dates in the booking range
+        let currentDate = new Date(bookingStart);
+        while (currentDate < bookingEnd) {
+          const dateStr = currentDate.toISOString().split("T")[0];
+          bookedCounts.set(dateStr, (bookedCounts.get(dateStr) || 0) + 1);
+          currentDate.setDate(currentDate.getDate() + 1);
+        }
+      }
+    }
+
+    // Disable dates where all rooms are booked
     const disabledDates = Array.from(bookedCounts.entries())
       .filter(([date, count]) => count >= totalRooms)
       .map(([date]) => date);
@@ -129,24 +143,46 @@ onAuthStateChanged(auth, async (user) => {
 
 async function findAvailableRoom(roomType, selectedDates) {
   const [startDate, endDate] = selectedDates;
-  const dateRange = generateDateRange(startDate, endDate);
 
   // Get all rooms of this type
   const roomsQuery = query(collection(db, "Room"), where("type", "==", roomType));
   const roomsSnapshot = await getDocs(roomsQuery);
 
   for (const roomDoc of roomsSnapshot.docs) {
-    const roomData = roomDoc.data();
-    const bookedDates = roomData.bookedDates || [];
-    
-    // Check if all dates in range are available
-    const isAvailable = dateRange.every(date => !bookedDates.includes(date));
-    
+    const roomId = roomDoc.id;
+
+    // Check if the room is available for the selected dates
+    const isAvailable = await isRoomAvailable(roomId, startDate, endDate);
     if (isAvailable) {
-      return roomDoc.id; // Return first available room ID
+      return roomId; // Return the first available room ID
     }
   }
-  return null;
+  return null; // No available rooms
+}
+
+async function isRoomAvailable(roomId, startDate, endDate) {
+  // Query bookings for the selected room
+  const bookingsQuery = query(
+    collection(db, "Booking"),
+    where("roomID", "==", roomId)
+  );
+  const bookingsSnapshot = await getDocs(bookingsQuery);
+
+  for (const bookingDoc of bookingsSnapshot.docs) {
+    const bookingData = bookingDoc.data();
+    const bookingStart = new Date(bookingData.checkInDate);
+    const bookingEnd = new Date(bookingData.checkOutDate);
+
+    // Check for overlapping dates
+    if (
+      (startDate >= bookingStart && startDate < bookingEnd) || // New booking starts during an existing booking
+      (endDate > bookingStart && endDate <= bookingEnd) || // New booking ends during an existing booking
+      (startDate <= bookingStart && endDate >= bookingEnd) // New booking spans an existing booking
+    ) {
+      return false; // Room is not available
+    }
+  }
+  return true; // Room is available
 }
 
 // Confirm booking handler
@@ -159,24 +195,30 @@ if (confirmBookingBtn) {
     }
 
     try {
+      // Check if the room is still available for the selected dates
+      const isAvailable = await isRoomAvailable(
+        selectedRoomId,
+        fpInstance.selectedDates[0],
+        fpInstance.selectedDates[1]
+      );
+
+      if (!isAvailable) {
+        alert("The room is no longer available for the selected dates. Please choose different dates.");
+        return;
+      }
+
       // Generate booking ID
       const bookingId = await getNextBookingId();
       const bookingIdStr = `B${bookingId}`;
 
-      // In confirm booking handler
-    await setDoc(doc(db, "Booking", bookingIdStr), {
-      bookID: bookingIdStr,
-      guestID: auth.currentUser.uid,
-      roomID: selectedRoomId,
-      checkInDate: fpInstance.formatDate(fpInstance.selectedDates[0], "Y-m-d"),
-      checkOutDate: fpInstance.formatDate(fpInstance.selectedDates[1], "Y-m-d"),
-      status: "pending" // Changed from "confirmed"
-  });
-
-      // Update room's booked dates
-      const dateRange = generateDateRange(fpInstance.selectedDates[0], fpInstance.selectedDates[1]);
-      await updateDoc(doc(db, "Room", selectedRoomId), {
-        bookedDates: arrayUnion(...dateRange)
+      // Create booking document
+      await setDoc(doc(db, "Booking", bookingIdStr), {
+        bookID: bookingIdStr,
+        guestID: auth.currentUser.uid,
+        roomID: selectedRoomId,
+        checkInDate: fpInstance.formatDate(fpInstance.selectedDates[0], "Y-m-d"),
+        checkOutDate: fpInstance.formatDate(fpInstance.selectedDates[1], "Y-m-d"),
+        status: "pending"
       });
 
       alert(`Booking confirmed! Room: ${selectedRoomId}`);
@@ -186,19 +228,6 @@ if (confirmBookingBtn) {
       alert(`Booking failed: ${error.message}`);
     }
   });
-}
-
-function generateDateRange(startDate, endDate) {
-  const dates = [];
-  let current = new Date(startDate);
-  while (current <= endDate) {
-    const y = current.getFullYear();
-    const m = String(current.getMonth() + 1).padStart(2, "0");
-    const d = String(current.getDate()).padStart(2, "0");
-    dates.push(`${y}-${m}-${d}`);
-    current.setDate(current.getDate() + 1);
-  }
-  return dates;
 }
 
 async function getNextBookingId() {

@@ -308,3 +308,51 @@ table tbody td {
 .close:hover {
   color: #333;
 }
+
+/* Edit Modal Amenities Checkboxes */
+#editTypeAmenities {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 1rem;
+  margin: 1rem 0;
+}
+
+#editTypeAmenities label {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+}
+
+#editTypeAmenities img {
+  width: 40px;
+  height: 40px;
+  object-fit: contain;
+}
+
+#editTypeAmenities input {
+  margin: 0;
+}
+
+/* Image Preview */
+#editTypeImagePreview {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+#editTypeImagePreview img {
+  width: 100px;
+  height: 100px;
+  object-fit: cover;
+  border-radius: 4px;
+  border: 1px solid #ddd;
+}
+
+/* Always show delete button */
+.delete-amenity {
+  opacity: 1 !important;
+}

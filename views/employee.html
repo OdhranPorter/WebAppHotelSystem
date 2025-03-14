@@ -76,22 +76,32 @@
     </div>
   </main>
   <!-- Add this before </body> -->
-<div id="editTypeModal" class="modal">
-  <div class="modal-content">
-    <span class="close">&times;</span>
-    <h2>Edit Room Type</h2>
-    <form id="editTypeForm">
-      <input type="text" id="editTypeName" required>
-      <input type="number" id="editTypePrice" required>
-      <div id="editTypeAmenities" class="amenity-checkboxes"></div>
-      <div class="image-uploads">
-        <input type="file" id="editTypeImages" multiple accept="image/*">
-        <div class="image-preview" id="editTypeImagePreview"></div>
-      </div>
-      <button type="submit">Save Changes</button>
-    </form>
+  <div id="editTypeModal" class="modal">
+    <div class="modal-content">
+      <span class="close">&times;</span>
+      <h2>Edit Room Type</h2>
+      <form id="editTypeForm">
+        <label>Type Name:
+          <input type="text" id="editTypeName" required>
+        </label>
+        
+        <label>Price per Night (€):
+          <input type="number" id="editTypePrice" required step="0.01">
+        </label>
+  
+        <h3>Amenities</h3>
+        <div id="editTypeAmenities" class="amenity-checkboxes"></div>
+  
+        <h3>Room Images</h3>
+        <div class="image-uploads">
+          <input type="file" id="editTypeImages" multiple accept="image/*">
+          <div class="image-preview" id="editTypeImagePreview"></div>
+        </div>
+  
+        <button type="submit">Save Changes</button>
+      </form>
+    </div>
   </div>
-</div>
 
   <script type="module" src="js/employee.js"></script>
 </body>

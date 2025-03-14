@@ -143,7 +143,7 @@ async function loadRoomTypesWithRooms() {
 
     typeContainer.innerHTML = `
       <div class="room-type-header">
-        <h3>${typeName} Rooms ($${typeData.price}/night)</h3>
+        <h3>${typeName} Rooms (€${typeData.price}/night)</h3>
         <div>
           <button class="edit-type-btn" data-type="${typeName}">Edit Type</button>
           <button class="create-room-btn" data-type="${typeName}" data-next="${maxRoomNumber + 1}">
@@ -316,15 +316,29 @@ async function loadAmenities() {
       <button class="delete-amenity" data-id="${doc.id}">&times;</button>
     `;
 
-    // Add delete amenity handler
-    div.querySelector('.delete-amenity').addEventListener('click', async (e) => {
-      e.stopPropagation();
-      const amenityId = e.target.dataset.id;
-      if (confirm(`Delete amenity ${amenityId}?`)) {
-        await deleteDoc(doc(db, "Amenity", amenityId));
-        loadAmenities();
-      }
-    });
+    // Debugging: Verify Firestore functions
+console.log("doc function:", doc);
+console.log("deleteDoc function:", deleteDoc);
+
+// Delete amenity handler
+div.querySelector('.delete-amenity').addEventListener('click', async (e) => {
+  e.stopPropagation();
+  console.log("Delete button clicked"); // Debugging
+  const amenityId = e.currentTarget.dataset.id;
+  console.log("Amenity ID to delete:", amenityId); // Debugging
+
+  if (confirm(`Delete amenity ${amenityId}?`)) {
+    try {
+      // Correct usage of deleteDoc
+      await deleteDoc(doc(db, "Amenity", amenityId));
+      console.log("Amenity deleted successfully"); // Debugging
+      loadAmenities();
+    } catch (error) {
+      console.error("Error deleting amenity:", error); // Debugging
+      alert("Failed to delete amenity. Check console for details.");
+    }
+  }
+});
 
     amenitiesList.appendChild(div);
   });
