@@ -152,3 +152,34 @@ footer {
   margin: 0.5rem 0;
   color: #666;
 }
+
+/* Add these styles to the existing booking.css */
+#guestDetailsForm {
+  margin: 20px 0;
+  padding: 20px;
+  background: #f8f9fa;
+  border-radius: 8px;
+}
+
+#guestDetailsForm input {
+  display: block;
+  width: 100%;
+  margin: 10px 0;
+  padding: 8px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+}
+
+#submitDetailsBtn {
+  background-color: #28a745;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 4px;
+  cursor: pointer;
+  margin-top: 10px;
+}
+
+#submitDetailsBtn:hover {
+  background-color: #218838;
+}

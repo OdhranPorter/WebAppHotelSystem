@@ -64,46 +64,15 @@ onAuthStateChanged(auth, async (user) => {
     roomTypeDisplay.textContent = `${roomType} Room`;
     priceDisplay.textContent = `€${typeData.price}/night`;
 
-    // Fetch all rooms of this type
-    const roomsQuery = query(collection(db, "Room"), where("type", "==", roomType));
-    const roomsSnapshot = await getDocs(roomsQuery);
-    const totalRooms = roomsSnapshot.size;
-
-    // Calculate fully booked dates
-    const bookedCounts = new Map();
-    for (const roomDoc of roomsSnapshot.docs) {
-      const bookingsQuery = query(
-        collection(db, "Booking"),
-        where("roomID", "==", roomDoc.id)
-      );
-      const bookingsSnapshot = await getDocs(bookingsQuery);
-
-      for (const bookingDoc of bookingsSnapshot.docs) {
-        const bookingData = bookingDoc.data();
-        const bookingStart = new Date(bookingData.checkInDate);
-        const bookingEnd = new Date(bookingData.checkOutDate);
-
-        // Generate all dates in the booking range
-        let currentDate = new Date(bookingStart);
-        while (currentDate < bookingEnd) {
-          const dateStr = currentDate.toISOString().split("T")[0];
-          bookedCounts.set(dateStr, (bookedCounts.get(dateStr) || 0) + 1);
-          currentDate.setDate(currentDate.getDate() + 1);
-        }
-      }
-    }
-
-    // Disable dates where all rooms are booked
-    const disabledDates = Array.from(bookedCounts.entries())
-      .filter(([date, count]) => count >= totalRooms)
-      .map(([date]) => date);
+    // Fetch fully booked dates for the room type
+    const fullyBookedDates = await getFullyBookedDates(roomType);
 
     // Initialize date picker with disabled dates
     flatpickr(datePickerInput, {
       mode: "range",
       dateFormat: "Y-m-d",
       minDate: "today",
-      disable: disabledDates,
+      disable: fullyBookedDates,
       onChange: async (selectedDates, dateStr, instance) => {
         const bookingSummary = document.getElementById('bookingSummary');
         const confirmBtn = document.getElementById('confirmBookingBtn');
@@ -140,6 +109,61 @@ onAuthStateChanged(auth, async (user) => {
     console.error("Error initializing booking:", error);
   }
 });
+
+async function getFullyBookedDates(roomType) {
+  const fullyBookedDates = [];
+  const roomsQuery = query(collection(db, "Room"), where("type", "==", roomType));
+  const roomsSnapshot = await getDocs(roomsQuery);
+
+  // Get all rooms of this type
+  const roomIds = roomsSnapshot.docs.map(doc => doc.id);
+
+  // Create a map to track booked dates for each room
+  const bookedDatesMap = new Map();
+
+  // Fetch bookings for each room
+  for (const roomId of roomIds) {
+    const bookingsQuery = query(collection(db, "Booking"), where("roomID", "==", roomId));
+    const bookingsSnapshot = await getDocs(bookingsQuery);
+
+    const bookedDates = [];
+    for (const bookingDoc of bookingsSnapshot.docs) {
+      const bookingData = bookingDoc.data();
+      const startDate = new Date(bookingData.checkInDate);
+      const endDate = new Date(bookingData.checkOutDate);
+
+      // Add each date in the range to the bookedDates array
+      for (let d = startDate; d <= endDate; d.setDate(d.getDate() + 1)) {
+        bookedDates.push(d.toISOString().split('T')[0]);
+      }
+    }
+
+    // Store booked dates for this room
+    bookedDatesMap.set(roomId, bookedDates);
+  }
+
+  // Determine fully booked dates
+  if (roomIds.length > 0) {
+    // Get all unique dates from all rooms
+    const allDates = [...new Set([...bookedDatesMap.values()].flat())];
+
+    // Check each date to see if it's fully booked
+    for (const date of allDates) {
+      let isFullyBooked = true;
+      for (const roomId of roomIds) {
+        if (!bookedDatesMap.get(roomId).includes(date)) {
+          isFullyBooked = false;
+          break;
+        }
+      }
+      if (isFullyBooked) {
+        fullyBookedDates.push(date);
+      }
+    }
+  }
+
+  return fullyBookedDates;
+}
 
 async function findAvailableRoom(roomType, selectedDates) {
   const [startDate, endDate] = selectedDates;
@@ -218,7 +242,7 @@ if (confirmBookingBtn) {
         roomID: selectedRoomId,
         checkInDate: fpInstance.formatDate(fpInstance.selectedDates[0], "Y-m-d"),
         checkOutDate: fpInstance.formatDate(fpInstance.selectedDates[1], "Y-m-d"),
-        status: "pending"
+        status: "booked"
       });
 
       alert(`Booking confirmed! Room: ${selectedRoomId}`);
