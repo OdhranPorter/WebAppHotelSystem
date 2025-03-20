@@ -235,3 +235,9 @@ body {
   padding: 8px;
   font-size: 0.9em;
 }
+/* Add this to style the image name label */
+.image-item p {
+  margin: 8px 0;
+  font-weight: bold;
+  color: #333;
+}

@@ -2,7 +2,7 @@
 <html>
   <head>
     <title>Hotel Management - Unified Edit & Delete</title>
-    <link rel="stylesheet" href="css\populate.css"> <!-- Add this line -->
+    <link rel="stylesheet" href="css/populate.css"> <!-- Add this line -->
     <style>
       /* Basic styling for the navbar and sections */
       body {
@@ -54,39 +54,34 @@
         margin-right: 5px;
       }
       .image-gallery {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-  gap: 20px;
-  padding: 20px;
-}
-
-.image-item {
-  border: 1px solid #ddd;
-  padding: 10px;
-  text-align: center;
-}
-
-.image-item img {
-  max-width: 100%;
-  height: 200px;
-  object-fit: cover;
-  margin-bottom: 10px;
-}
-
-.search-box {
-  padding: 20px;
-  background: #f5f5f5;
-  margin-bottom: 20px;
-}
-
-.form-group {
-  margin-bottom: 15px;
-}
-
-.form-group label {
-  display: block;
-  margin-bottom: 5px;
-}
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+        gap: 20px;
+        padding: 20px;
+      }
+      .image-item {
+        border: 1px solid #ddd;
+        padding: 10px;
+        text-align: center;
+      }
+      .image-item img {
+        max-width: 100%;
+        height: 200px;
+        object-fit: cover;
+        margin-bottom: 10px;
+      }
+      .search-box {
+        padding: 20px;
+        background: #f5f5f5;
+        margin-bottom: 20px;
+      }
+      .form-group {
+        margin-bottom: 15px;
+      }
+      .form-group label {
+        display: block;
+        margin-bottom: 5px;
+      }
     </style>
   </head>
   <body>
@@ -97,94 +92,89 @@
         <li><a class="nav-link" data-target="employee-section">Employee</a></li>
         <li><a class="nav-link" data-target="room-section">Room</a></li>
         <li><a class="nav-link" data-target="booking-section">Booking</a></li>
-        <li><a class="nav-link" data-target="image-section">Images</a></li> 
+        <li><a class="nav-link" data-target="image-section">Images</a></li>
         <li><a class="nav-link" data-target="delete-section">Delete</a></li>
         <li><a class="nav-link" data-target="edit-section">Edit</a></li>
       </ul>
     </nav>
 
     <!-- Guest Section -->
-    <!-- In the Guest Section -->
-<div id="guest-section" class="section active">
-  <h1>Register Guest</h1>
-  <form id="guestForm">
-    <input type="text" id="guest-fName" placeholder="First Name" required />
-    <input type="text" id="guest-sName" placeholder="Last Name" required />
-    <input type="email" id="guest-email" placeholder="Email" required />
-    <input type="tel" id="guest-phone" placeholder="Phone" required />
-    <input type="password" id="guest-password" placeholder="Password" required />
-    <input type="text" id="guest-role" value="guest" readonly required />
-    <button type="submit">Register Guest</button>
-  </form>
-  <!-- Guest List Container -->
-  <div id="guest-list">
-    <h2>Registered Guests</h2>
-  </div>
-</div>
+    <div id="guest-section" class="section active">
+      <h1>Register Guest</h1>
+      <form id="guestForm">
+        <input type="text" id="guest-fName" placeholder="First Name" required />
+        <input type="text" id="guest-sName" placeholder="Last Name" required />
+        <input type="email" id="guest-email" placeholder="Email" required />
+        <input type="tel" id="guest-phone" placeholder="Phone" required />
+        <input type="password" id="guest-password" placeholder="Password" required />
+        <input type="text" id="guest-role" value="guest" readonly required />
+        <button type="submit">Register Guest</button>
+      </form>
+      <!-- Guest List Container -->
+      <div id="guest-list">
+        <h2>Registered Guests</h2>
+      </div>
+    </div>
 
-    
-    <!-- In the Employee Section -->
-<div id="employee-section" class="section">
-  <h1>Register Employee</h1>
-  <form id="employeeForm">
-    <input type="text" id="emp-name" placeholder="Name" required />
-    <input type="tel" id="emp-phone" placeholder="Phone" required />
-    <input type="email" id="emp-email" placeholder="Email" required />
-    <input type="password" id="emp-password" placeholder="Password" required />
-    <select id="emp-role" required>
-      <option value="employee" selected>employee</option>
-      <option value="admin">admin</option>
-    </select>
-    <button type="submit">Register Employee</button>
-  </form>
-  <!-- Employee List Container -->
-  <div id="employee-list">
-    <h2>Registered Employees</h2>
-  </div>
-</div>
+    <!-- Employee Section -->
+    <div id="employee-section" class="section">
+      <h1>Register Employee</h1>
+      <form id="employeeForm">
+        <input type="text" id="emp-name" placeholder="Name" required />
+        <input type="tel" id="emp-phone" placeholder="Phone" required />
+        <input type="email" id="emp-email" placeholder="Email" required />
+        <input type="password" id="emp-password" placeholder="Password" required />
+        <select id="emp-role" required>
+          <option value="employee" selected>employee</option>
+          <option value="admin">admin</option>
+        </select>
+        <button type="submit">Register Employee</button>
+      </form>
+      <!-- Employee List Container -->
+      <div id="employee-list">
+        <h2>Registered Employees</h2>
+      </div>
+    </div>
 
-  <!-- Room Section -->
-<div id="room-section" class="section">
-  <h1>Create a Room</h1>
-  <form id="roomForm">
-    <select id="room-type" required>
-      <option value="">Select Room Type</option>
-      <option value="Standard">Standard</option>
-      <option value="Family">Family</option>
-      <option value="Deluxe">Deluxe</option>
-      <option value="Suite">Suite</option>
-    </select>
-    <input type="number" id="room-price" placeholder="Price per night (e.g. 120)" required />
-    <input type="text" id="room-id" placeholder="Room ID (e.g. R101)" required />
-    <input type="text" id="room-amenities" placeholder="Amenities (comma separated: Wi-Fi, TV, Mini-Bar)" />
-    <button type="submit">Create Room</button>
-  </form>
-  
-  <!-- Room List Container -->
-  <div id="room-list">
-    <h2>Existing Rooms</h2>
-  </div>
-</div>
-</div>
-   <!-- Booking Section -->
-<div id="booking-section" class="section">
-  <h1>Create a Booking</h1>
-  <form id="bookingForm">
-    <input type="text" id="booking-roomId" placeholder="Room ID (e.g. R101)" required />
-    <input type="text" id="booking-guestId" placeholder="Guest UID" required />
-    <label>Check-in date:</label>
-    <input type="date" id="booking-checkIn" required />
-    <label>Check-out date:</label>
-    <input type="date" id="booking-checkOut" required />
-    <button type="submit">Create Booking</button>
-  </form>
+    <!-- Room Section -->
+    <div id="room-section" class="section">
+      <h1>Create a Room</h1>
+      <form id="roomForm">
+        <select id="room-type" required>
+          <option value="">Select Room Type</option>
+          <option value="Standard">Standard</option>
+          <option value="Family">Family</option>
+          <option value="Deluxe">Deluxe</option>
+          <option value="Suite">Suite</option>
+        </select>
+        <input type="number" id="room-price" placeholder="Price per night (e.g. 120)" required />
+        <input type="text" id="room-id" placeholder="Room ID (e.g. R101)" required />
+        <input type="text" id="room-amenities" placeholder="Amenities (comma separated: Wi-Fi, TV, Mini-Bar)" />
+        <button type="submit">Create Room</button>
+      </form>
+      <!-- Room List Container -->
+      <div id="room-list">
+        <h2>Existing Rooms</h2>
+      </div>
+    </div>
 
-  <!-- Booking List Container -->
-  <div id="booking-list">
-    <h2>Existing Bookings</h2>
-    <!-- The booking table will be populated here by loadBookings() -->
-  </div>
-</div>
+    <!-- Booking Section -->
+    <div id="booking-section" class="section">
+      <h1>Create a Booking</h1>
+      <form id="bookingForm">
+        <input type="text" id="booking-roomId" placeholder="Room ID (e.g. R101)" required />
+        <input type="text" id="booking-guestId" placeholder="Guest UID" required />
+        <label>Check-in date:</label>
+        <input type="date" id="booking-checkIn" required />
+        <label>Check-out date:</label>
+        <input type="date" id="booking-checkOut" required />
+        <button type="submit">Create Booking</button>
+      </form>
+      <!-- Booking List Container -->
+      <div id="booking-list">
+        <h2>Existing Bookings</h2>
+      </div>
+    </div>
 
     <!-- Delete Section -->
     <div id="delete-section" class="section">
@@ -214,7 +204,7 @@
       <input type="text" id="editIdInput" placeholder="ID/UID/empId" />
       <button id="fetchItemBtn">Fetch</button>
       <form id="editForm" style="display: none; margin-top: 1rem;">
-        <!-- Guest Fields (updated to include all attributes) -->
+        <!-- Guest Fields -->
         <div id="guestFields" style="display: none;">
           <label>First Name:</label>
           <input type="text" id="guestEditFName" />
@@ -262,47 +252,32 @@
         <button type="submit" id="updateItemBtn">Update</button>
       </form>
     </div>
+
+    <!-- Image Section -->
     <div id="image-section" class="section">
       <h1>Image Management</h1>
-      
       <!-- Upload Form -->
       <form id="imageForm">
         <div class="form-group">
-          <label>Room Type:</label>
-          <select id="image-roomType" required>
-            <option value="">Select Room Type</option>
-            <option value="Deluxe">Deluxe</option>
-            <option value="Standard">Standard</option>
-            <option value="Suite">Suite</option>
-            <option value="Family">Family</option>
-          </select>
+          <label>Image Name:</label>
+          <input type="text" id="image-name" placeholder="Unique Image Name" required />
         </div>
-    
-       
-    
         <div class="form-group">
           <label>Select Image:</label>
           <input type="file" id="image-file" accept="image/*" required>
         </div>
-        
         <button type="submit">Upload Image</button>
       </form>
-    
       <!-- Image Gallery -->
       <div class="image-gallery-container">
-        <h2>Room Images</h2>
+        <h2>All Images</h2>
         <div class="search-box">
-          <select id="view-images-roomType">
-            <option value="Deluxe">Deluxe</option>
-            <option value="Standard">Standard</option>
-            <option value="Suite">Suite</option>
-            <option value="Family">Family</option>
-          </select>
-          <button onclick="loadImages()">Load Images</button>
+          <button onclick="loadImages()">Load All Images</button>
         </div>
         <div id="image-gallery" class="image-gallery"></div>
       </div>
     </div>
+
     <!-- Link to the main JavaScript logic -->
     <script type="module" src="/js/populate.js"></script>
   </body>

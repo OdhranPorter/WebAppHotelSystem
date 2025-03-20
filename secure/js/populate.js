@@ -1225,3 +1225,112 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   });
 });
+
+
+async function uploadImageToCollection(imageName, file) {
+  try {
+    // Upload to Firebase Storage
+    const storageRef = ref(storage, `images/${imageName}`);
+    await uploadBytes(storageRef, file);
+    const downloadURL = await getDownloadURL(storageRef);
+
+    // Save metadata to Firestore
+    await setDoc(doc(db, "Images", imageName), {
+      url: downloadURL,
+      uploadedAt: new Date().toISOString()
+    });
+    
+    return downloadURL;
+  } catch (error) {
+    console.error("Upload error:", error);
+    throw error;
+  }
+}
+
+/***************************************************
+ * LOAD IMAGES FROM 'IMAGES' COLLECTION
+ ***************************************************/
+async function loadAllImages() {
+  const gallery = document.getElementById("image-gallery");
+  gallery.innerHTML = "";
+  
+  try {
+    const querySnapshot = await getDocs(collection(db, "Images"));
+    querySnapshot.forEach((doc) => {
+      const imageName = doc.id;
+      const imageUrl = doc.data().url;
+
+      // Create gallery item
+      const imgContainer = document.createElement("div");
+      imgContainer.className = "image-item";
+
+      const img = document.createElement("img");
+      img.src = imageUrl;
+      img.alt = imageName;
+
+      const nameLabel = document.createElement("p");
+      nameLabel.textContent = `Name: ${imageName}`;
+
+      const deleteBtn = document.createElement("button");
+      deleteBtn.textContent = "Delete";
+      deleteBtn.onclick = () => deleteImageFromCollection(imageName);
+
+      imgContainer.appendChild(img);
+      imgContainer.appendChild(nameLabel);
+      imgContainer.appendChild(deleteBtn);
+      gallery.appendChild(imgContainer);
+    });
+  } catch (error) {
+    console.error("Error loading images:", error);
+  }
+}
+
+/***************************************************
+ * DELETE IMAGE FROM COLLECTION & STORAGE
+ ***************************************************/
+async function deleteImageFromCollection(imageName) {
+  try {
+    // Delete from Firestore
+    await deleteDoc(doc(db, "Images", imageName));
+    
+    // Delete from Storage
+    const storageRef = ref(storage, `images/${imageName}`);
+    await deleteObject(storageRef);
+    
+    alert("Image deleted successfully!");
+    loadAllImages();
+  } catch (error) {
+    console.error("Delete error:", error);
+    alert("Error deleting image: " + error.message);
+  }
+}
+
+/***************************************************
+ * UPDATE IMAGE FORM HANDLER
+ ***************************************************/
+document.addEventListener("DOMContentLoaded", () => {
+  const imageForm = document.getElementById("imageForm");
+  if (imageForm) {
+    imageForm.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const imageName = document.getElementById("image-name").value.trim();
+      const fileInput = document.getElementById("image-file").files[0];
+      
+      if (!imageName || !fileInput) {
+        alert("Please fill all fields");
+        return;
+      }
+
+      try {
+        await uploadImageToCollection(imageName, fileInput);
+        imageForm.reset();
+        loadAllImages();
+      } catch (error) {
+        alert(error.message);
+      }
+    });
+  }
+
+  // Update the loadImages handler
+  window.loadImages = loadAllImages;
+});
