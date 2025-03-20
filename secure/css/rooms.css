@@ -8,16 +8,23 @@ body {
 header {
   background-color: #333;
   color: #fff; 
-  padding: 1rem;
+  padding: 1rem 2rem; /* More padding for better spacing */
+ 
+}
+header .logo {
+  display: flex;
+  align-items: center;
+}
+header .logo img {
+  height: 50px;
+  margin-right: 10px;
 }
 header nav a {
   color: #fff;
   text-decoration: none;
   margin-right: 20px;
 }
-header nav a:hover {
-  text-decoration: underline;
-}
+
 
 main {
   padding: 2rem;
@@ -157,4 +164,21 @@ footer {
 
 .carousel-button:hover {
   background-color: rgba(0, 0, 0, 0.8);
+}
+
+/* Fix purple links */
+a{
+  color: white; /* Sets the default color */
+  text-decoration: none;
+  font-size: 18px;
+}
+
+/* Prevents links from turning purple */
+a:visited {
+  color: white;
+}
+
+/* Hover effect */
+a:hover {
+  color: #e6b800;
 }
