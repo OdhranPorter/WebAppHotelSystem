@@ -153,6 +153,77 @@ main {
   color: #555;
 }
 
+.amenities {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-top: 2rem;
+  gap: 2rem;
+}
+
+.amenities-image {
+  flex: 1; /* Make the image container take up 50% of the width */
+  overflow: hidden; /* Prevents image overflow in case the aspect ratio is not ideal */
+}
+
+.amenities-image img {
+  width: 100%; /* Ensure the image fills the width of its container */
+  height: 600px; /* Maintain aspect ratio */
+  
+  border-radius: 10px; /* Optional: Add rounded corners to the image */
+}
+
+.amenities-text {
+  flex: 1;
+}
+
+.amenities-text h2 {
+  font-size: 2rem;
+  color: #333;
+  margin-bottom: 1rem;
+}
+
+.amenities-text p {
+  font-size: 1rem;
+  color: #555;
+  margin-bottom: 1rem;
+}
+
+.amenities-text ul {
+  list-style-type: none;
+  padding-left: 0;
+}
+
+.amenities-text ul li {
+  font-size: 1rem;
+  color: #333;
+  margin-bottom: 0.5rem;
+  position: relative;
+  padding-left: 20px;
+}
+
+.amenities-text ul li::before {
+  content: '✔';
+  position: absolute;
+  left: 0;
+  color: #007bff; /* Change the color of the checkmark */
+}
+
+@media screen and (max-width: 768px) {
+  .amenities {
+    flex-direction: column;
+    text-align: center;
+  }
+
+  .amenities-image {
+    margin-bottom: 1rem;
+  }
+
+  .amenities-text {
+    flex: none;
+  }
+}
+
 /* ======================
    Footer
 ====================== */
