@@ -1,54 +1,25 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>Employee Check-In Page</title>
-  <link rel="stylesheet" href="css/checkin.css">
-  <style>
-    /* Basic styling; you can customize as needed */
-    body {
-      font-family: Arial, sans-serif;
-      background: #f8f9fa;
-      padding: 20px;
-    }
-    .container {
-      max-width: 800px;
-      margin: 0 auto;
-      background: #fff;
-      padding: 20px;
-      border-radius: 8px;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-    }
-    .booking-card {
-      border: 1px solid #ddd;
-      padding: 15px;
-      margin-bottom: 15px;
-      border-radius: 6px;
-      background: #fafafa;
-    }
-    .booking-card h3 {
-      margin: 0 0 10px;
-    }
-    .booking-card button {
-      background: #28a745;
-      color: #fff;
-      border: none;
-      padding: 8px 15px;
-      border-radius: 4px;
-      cursor: pointer;
-    }
-    .booking-card button:hover {
-      background: #218838;
-    }
-  </style>
+    <meta charset="UTF-8">
+    <title>Employee Check-In Page</title>
+    <link rel="stylesheet" href="css/checkin.css">
 </head>
 <body>
-  <div class="container">
-    <h1>Employee Check-In</h1>
-    <div id="bookingsList">
-      <p>Loading bookings...</p>
+    <div class="container">
+        <h1>Employee Check-In</h1>
+        
+        <div class="search-section">
+            <input type="text" 
+                   id="searchInput" 
+                   placeholder="Search by Booking ID or Guest Username..."
+                   onkeyup="searchBookings()">
+        </div>
+
+        <div class="bookings-grid" id="bookingsList">
+            <p class="no-bookings">Loading bookings...</p>
+        </div>
     </div>
-  </div>
-  <script type="module" src="js/checkin.js"></script>
+    <script type="module" src="js/checkin.js"></script>
 </body>
 </html>
