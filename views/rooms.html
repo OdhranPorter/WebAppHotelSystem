@@ -15,6 +15,8 @@
     </div>
       <!-- Right side: Account or Login -->
       <div style="display: flex; align-items: center;">
+        <a href="home">Home</a>
+        <a href="rooms">Rooms</a>
         <div id="accountDropdown" style="display: none; position: relative;">
           <button id="accountBtn" style="background: #555; color: #fff; padding: 0.5rem 1rem; border: none;">
             Account
@@ -22,18 +24,16 @@
           <div id="accountMenu"
                style="position: absolute; top: 2.5rem; right: 0; background-color: #fff; color: #333;
                       padding: 0.5rem; display: none; box-shadow: 0 2px 5px rgba(0,0,0,0.3);">
-            <a href="profile"
+            <button id="profile"
                style="display: block; padding: 0.5rem 1rem; color: #333; text-decoration: none;">
               Profile
-            </a>
+        </button>
             <button id="logoutBtn"
-                    style="display: block; width: 100%; text-align: left; padding: 0.5rem 1rem; border: none; background: none; cursor: pointer;">
+              style="display: block; padding: 0.5rem 1rem; color: #333; text-decoration: none;">
               Logout
             </button>
           </div>
         </div>
-        <a href="home">Home</a>
-        <a href="rooms">Rooms</a>
         <a id="loginBtn" href="login" style="margin-left: 1rem;">Login</a>
       </div>
     </nav>

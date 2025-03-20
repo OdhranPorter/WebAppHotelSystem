@@ -6,10 +6,10 @@ import {
   where,
   getDocs,
   doc,
+  getDoc,    
   updateDoc
 } from "https://www.gstatic.com/firebasejs/11.3.0/firebase-firestore.js";
 
-// Firebase configuration (replace with your own config if needed)
 const firebaseConfig = {
   apiKey: "AIzaSyDw5aeA0uwE7R06Ht1wjkx6TcehPWs0Hac",
   authDomain: "hotel-booking-3aad3.firebaseapp.com",
@@ -19,60 +19,122 @@ const firebaseConfig = {
   appId: "1:385718256742:web:03fc7761dbf7e7345ad9a7"
 };
 
-// Initialize Firebase
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
-// Function to load bookings with status "booked"
-async function loadBookings() {
+async function loadBookings(searchTerm = '') {
   const bookingsList = document.getElementById("bookingsList");
-  bookingsList.innerHTML = "";
+  bookingsList.innerHTML = "<p>Loading bookings...</p>";
+  
   try {
-    // Query for bookings with status "booked"
-    const bookingsQuery = query(
+    const q = query(
       collection(db, "Booking"),
       where("status", "==", "booked")
     );
-    const querySnapshot = await getDocs(bookingsQuery);
+    
+    const querySnapshot = await getDocs(q);
+    const bookings = [];
 
-    if (querySnapshot.empty) {
-      bookingsList.innerHTML = "<p>No bookings pending check-in.</p>";
-      return;
-    }
-    // Create a card for each booking
-    querySnapshot.forEach(docSnap => {
+    for (const docSnap of querySnapshot.docs) {
       const booking = docSnap.data();
-      const bookingId = docSnap.id;
-      const card = document.createElement("div");
-      card.className = "booking-card";
-      card.innerHTML = `
-        <h3>Room: ${booking.roomID}</h3>
-        <p>Check-In: ${booking.checkInDate} | Check-Out: ${booking.checkOutDate}</p>
-        <p>Status: ${booking.status}</p>
-        <button onclick="checkInBooking('${bookingId}')">Check In</button>
-      `;
-      bookingsList.appendChild(card);
+      let guestName = 'Unknown';
+      let debugInfo = '';
+
+      try {
+        console.log(`Fetching guest: ${booking.guestID}`);
+        const guestRef = doc(db, "Guest", booking.guestID);
+        const guestSnap = await getDoc(guestRef);
+
+        if (guestSnap.exists()) {
+          const guestData = guestSnap.data();
+          console.log("Guest data:", guestData);
+          
+          if (guestData.fName && guestData.sName) {
+            guestName = `${guestData.fName} ${guestData.sName}`;
+          } else {
+            debugInfo = ' (Missing name fields)';
+          }
+        } else {
+          debugInfo = ' (Guest not found)';
+        }
+      } catch (error) {
+        console.error(`Error fetching guest ${booking.guestID}:`, error);
+        debugInfo = ' (Error loading guest)';
+      }
+
+      bookings.push({
+        id: docSnap.id,
+        ...booking,
+        guestName: guestName + debugInfo
+      });
+    }
+
+    // Filter bookings based on search term
+    const filtered = bookings.filter(booking => {
+      const searchLower = searchTerm.toLowerCase();
+      return booking.bookID.toLowerCase().includes(searchLower) ||
+             booking.guestName.toLowerCase().includes(searchLower);
     });
+
+    renderBookings(filtered);
+
   } catch (error) {
-    console.error("Error loading bookings", error);
-    bookingsList.innerHTML = "<p>Error loading bookings.</p>";
+    console.error("Error loading bookings:", error);
+    bookingsList.innerHTML = "<p>Error loading bookings. Please check console.</p>";
   }
 }
 
-// Expose checkInBooking so it can be called by inline onclick in the HTML
+function renderBookings(bookings) {
+  const bookingsList = document.getElementById("bookingsList");
+  bookingsList.innerHTML = "";
+
+  if (bookings.length === 0) {
+    bookingsList.innerHTML = "<p>No matching bookings found</p>";
+    return;
+  }
+
+  bookings.forEach(booking => {
+    const card = document.createElement("div");
+    card.className = "booking-card";
+    card.innerHTML = `
+      <h3>Booking ID: ${booking.bookID}</h3>
+      <p>Guest: ${booking.guestName}</p>
+      <p>Room: ${booking.roomID}</p>
+      <p>Check-In: ${booking.checkInDate}</p>
+      <p>Check-Out: ${booking.checkOutDate}</p>
+      <button class="checkin-button" onclick="checkInBooking('${booking.id}')">
+        Check In
+      </button>
+    `;
+    bookingsList.appendChild(card);
+  });
+}
+
+// Keep other functions the same
+
+// Date formatting helper
+function formatDate(dateString) {
+  const options = { year: 'numeric', month: 'short', day: 'numeric' };
+  return new Date(dateString).toLocaleDateString('en-US', options);
+}
+
 window.checkInBooking = async function(bookingId) {
   try {
-    // Update the booking's status to "checkedin"
     await updateDoc(doc(db, "Booking", bookingId), {
       status: "checkedin"
     });
-    alert("Booking checked in successfully.");
-    loadBookings(); // Refresh the bookings list
+    alert("Successfully checked in!");
+    loadBookings(document.getElementById('searchInput').value);
   } catch (error) {
-    console.error("Error checking in booking", error);
-    alert("Failed to check in booking: " + error.message);
+    console.error("Check-in failed:", error);
+    alert(`Check-in failed: ${error.message}`);
   }
 };
 
-// Load bookings on page load
+window.searchBookings = function() {
+  const searchTerm = document.getElementById('searchInput').value;
+  loadBookings(searchTerm);
+};
+
+// Initial load
 loadBookings();
