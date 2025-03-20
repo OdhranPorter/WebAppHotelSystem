@@ -1,0 +1,117 @@
+/* checkin.css */
+body {
+    font-family: 'Arial', sans-serif;
+    background: #f4f7f6;
+    margin: 0;
+    padding: 20px;
+}
+
+.container {
+    max-width: 1200px;
+    margin: 0 auto;
+    background: #fff;
+    padding: 2rem;
+    border-radius: 10px;
+    box-shadow: 0 2px 15px rgba(0,0,0,0.1);
+}
+
+h1 {
+    color: #2c3e50;
+    margin-bottom: 2rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 2px solid #3498db;
+}
+
+.search-section {
+    margin-bottom: 20px;
+    padding: 15px;
+    background: #fff;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+#searchInput {
+    width: 100%;
+    padding: 12px;
+    border: 2px solid #ddd;
+    border-radius: 25px;
+    font-size: 16px;
+    outline: none;
+    transition: border-color 0.3s ease;
+}
+
+#searchInput:focus {
+    border-color: #3498db;
+}
+
+.bookings-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 1.5rem;
+    margin-top: 1rem;
+}
+
+.booking-card {
+    background: white;
+    border-radius: 10px;
+    padding: 1.5rem;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    transition: transform 0.2s ease;
+}
+
+.booking-card:hover {
+    transform: translateY(-3px);
+}
+
+.booking-card h3 {
+    color: #2c3e50;
+    margin-top: 0;
+}
+
+.booking-card p {
+    margin: 8px 0;
+    color: #555;
+}
+
+.checkin-button {
+    background: #27ae60;
+    color: white;
+    border: none;
+    padding: 0.8rem 1.5rem;
+    border-radius: 25px;
+    cursor: pointer;
+    width: 100%;
+    transition: background 0.3s ease;
+    margin-top: 10px;
+}
+
+.checkin-button:hover {
+    background: #219a52;
+}
+
+.no-bookings {
+    text-align: center;
+    color: #95a5a6;
+    padding: 2rem;
+}
+
+@media screen and (max-width: 768px) {
+    .container {
+        padding: 1rem;
+    }
+    
+    .bookings-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+.guest-name {
+    color: #2c3e50;
+    font-weight: 500;
+    margin: 10px 0;
+  }
+  
+  .booking-card p {
+    margin: 6px 0;
+    color: #555;
+  }
