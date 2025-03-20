@@ -302,43 +302,38 @@ editTypeForm.addEventListener("submit", async (e) => {
   }
 });
 
-// Load amenities
+// Load amenities with enhanced deletion
 async function loadAmenities() {
   const snap = await getDocs(collection(db, "Amenity"));
   amenitiesList.innerHTML = "";
 
-  snap.forEach(doc => {
+  snap.forEach(amenityDoc => {
     const div = document.createElement("div");
     div.className = "amenity-item";
     div.innerHTML = `
-      <img src="${doc.data().image}" alt="${doc.id}">
-      <span>${doc.id}</span>
-      <button class="delete-amenity" data-id="${doc.id}">&times;</button>
+      <img src="${amenityDoc.data().image}" alt="${amenityDoc.id}">
+      <span>${amenityDoc.id}</span>
+      <button class="delete-amenity" data-id="${amenityDoc.id}">&times;</button>
     `;
 
-    // Debugging: Verify Firestore functions
-console.log("doc function:", doc);
-console.log("deleteDoc function:", deleteDoc);
+    // Delete amenity handler
+    div.querySelector('.delete-amenity').addEventListener('click', async (e) => {
+      e.stopPropagation();
+      const amenityId = e.currentTarget.dataset.id;
 
-// Delete amenity handler
-div.querySelector('.delete-amenity').addEventListener('click', async (e) => {
-  e.stopPropagation();
-  console.log("Delete button clicked"); // Debugging
-  const amenityId = e.currentTarget.dataset.id;
-  console.log("Amenity ID to delete:", amenityId); // Debugging
-
-  if (confirm(`Delete amenity ${amenityId}?`)) {
-    try {
-      // Correct usage of deleteDoc
-      await deleteDoc(doc(db, "Amenity", amenityId));
-      console.log("Amenity deleted successfully"); // Debugging
-      loadAmenities();
-    } catch (error) {
-      console.error("Error deleting amenity:", error); // Debugging
-      alert("Failed to delete amenity. Check console for details.");
-    }
-  }
-});
+      if (confirm(`Delete amenity ${amenityId}? This will remove it from all room types!`)) {
+        try {
+          const amenityRef = doc(db, "Amenity", amenityId);
+          await deleteDoc(amenityRef);
+          await removeAmenityFromRoomTypes(amenityId);
+          loadAmenities();
+          loadRoomTypesWithRooms();
+        } catch (error) {
+          console.error("Deletion error:", error);
+          alert(`Failed to delete amenity: ${error.message}`);
+        }
+      }
+    });
 
     amenitiesList.appendChild(div);
   });
@@ -367,6 +362,22 @@ if (amenityForm) {
     };
     reader.readAsDataURL(file);
   });
+}
+
+// Clean up room type references
+async function removeAmenityFromRoomTypes(amenityId) {
+  const roomTypesSnap = await getDocs(collection(db, "RoomType"));
+  const batch = writeBatch(db);
+
+  roomTypesSnap.forEach(docSnap => {
+    const data = docSnap.data();
+    if (data.amenities?.includes(amenityId)) {
+      const updatedAmenities = data.amenities.filter(a => a !== amenityId);
+      batch.update(docSnap.ref, { amenities: updatedAmenities });
+    }
+  });
+
+  await batch.commit();
 }
 
 // Load all bookings
