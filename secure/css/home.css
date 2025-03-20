@@ -161,9 +161,15 @@ main {
   gap: 2rem;
 }
 
+.amenities-image {
+  flex: 1; /* Make the image container take up 50% of the width */
+  overflow: hidden; /* Prevents image overflow in case the aspect ratio is not ideal */
+}
+
 .amenities-image img {
-  width: 400px;
-  height: 400px;
+  width: 100%; /* Ensure the image fills the width of its container */
+  height: 600px; /* Maintain aspect ratio */
+  
   border-radius: 10px; /* Optional: Add rounded corners to the image */
 }
 
