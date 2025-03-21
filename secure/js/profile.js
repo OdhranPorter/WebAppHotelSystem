@@ -140,7 +140,7 @@ function createBookingCard(booking, roomType, typeData, bookingId) {
             <img src="${typeData.images[0]}" alt="${roomType} Room" class="booking-image">
         </div>
         <div class="booking-details">
-            <h3 class="booking-type">${roomType} Room</h3>
+            <h3 class="booking-type">${roomType} Room (Booking #${bookingId})</h3>
             <p class="booking-dates">${formatDate(booking.checkInDate)} - ${formatDate(booking.checkOutDate)}</p>
             <div class="booking-status ${status}">${status.toUpperCase()}</div>
             <ul class="amenities-list">
@@ -245,40 +245,37 @@ window.calculateExtras = function() {
     document.getElementById('extrasTotal').textContent = total.toFixed(2);
 };
 
+// In the saveExtras function - remove the payment handling
 window.saveExtras = async function() {
-    // Recalculate extras to ensure latest selections are recorded
     window.calculateExtras();
 
-    // Require at least one extra to be selected
     if (currentExtrasBooking.extrasCost === 0) {
         alert("Please select at least one extra before proceeding.");
         return;
     }
 
     try {
-        // Update the booking document with extras details
         await updateDoc(doc(db, "Booking", currentExtrasBooking.id), {
             extras: currentExtrasBooking.extras,
             extrasCost: currentExtrasBooking.extrasCost,
-            extrasPaid: false
+            extrasPaid: true // Mark as paid automatically since we're removing payment
         });
-        alert("Extras updated.");
+        alert("Extras updated successfully!");
         extrasModal.style.display = 'none';
+        location.reload(); // Refresh to show updated extras
 
-        // Since the room has already been paid (status "checked in"),
-        // extras are paid separately.
-        currentPaymentBooking = {
-            id: currentExtrasBooking.id,
-            amount: currentExtrasBooking.extrasCost,
-            extras: true
-        };
-        document.getElementById('paymentAmount').textContent = currentPaymentBooking.amount.toFixed(2);
-        paymentModal.style.display = 'block';
     } catch (error) {
         console.error("Failed to update extras:", error);
         alert("Error updating extras: " + error.message);
     }
 };
+
+// Remove the payment modal trigger from the createBookingCard function
+if (status === 'checkedin') {
+    buttons += `<button class="edit-extras-btn" onclick="showExtrasModal('${bookingId}')">
+                    Edit Extras
+                </button>`;
+}
 
 // ---------------- Payment Handling ----------------
 

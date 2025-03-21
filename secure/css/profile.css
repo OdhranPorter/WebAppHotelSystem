@@ -358,3 +358,36 @@ button:hover {
     background-color: green;
     color: white;
 }
+
+.edit-extras-btn {
+    background: #3498db;
+    color: white;
+    border: none;
+    padding: 0.8rem 1.5rem;
+    border-radius: 25px;
+    cursor: pointer;
+    transition: background 0.2s ease;
+    margin-top: 1.5rem;
+    font-weight: bold;
+}
+
+.edit-extras-btn:hover {
+    background: #2980b9;
+}
+
+/* Existing cancel button for reference */
+.cancel-btn {
+    background: #ff4444;
+    color: white;
+    border: none;
+    padding: 0.8rem 1.5rem;
+    border-radius: 25px;
+    cursor: pointer;
+    transition: background 0.2s ease;
+    margin-top: 1.5rem;
+    font-weight: bold;
+}
+
+.cancel-btn:hover {
+    background: #cc0000;
+}
