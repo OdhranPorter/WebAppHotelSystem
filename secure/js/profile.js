@@ -112,27 +112,27 @@ onAuthStateChanged(auth, async (user) => {
 });
 
 function createBookingCard(booking, roomType, typeData, bookingId) {
+    // Convert status to lowercase for consistency
     const status = booking.status.toLowerCase();
-    const nights = calculateNights(booking);
-    const roomCost = typeData.price * nights;
-
+    
     // Start with the Cancel Booking button
     let buttons = `<button class="cancel-btn" onclick="cancelBooking('${bookingId}', '${status}')">
                         Cancel Booking
                    </button>`;
 
-    // If status is pending (if that ever occurs), show a Pay Now button.
-    // Otherwise, if status is "booked" or "checked in", show the Edit Extras button.
+    // If status is pending, show the "Pay Now" button.
     if (status === 'pending') {
-        buttons += `<button class="pay-btn" onclick="showPaymentModal('${bookingId}', ${typeData.price}, ${nights})">
-                        Pay Now (€${roomCost})
+        buttons += `<button class="pay-btn" onclick="showPaymentModal('${bookingId}', ${typeData.price}, ${calculateNights(booking)})">
+                        Pay Now (€${typeData.price * calculateNights(booking)})
                     </button>`;
-    } else if (status === 'booked' || status === 'checked in') {
+    }
+    // Only show the Edit Extras button if the room is "checkedin"
+    else if (status === 'checkedin') {
         buttons += `<button class="edit-extras-btn" onclick="showExtrasModal('${bookingId}')">
                         Edit Extras
                     </button>`;
     }
-
+    
     const card = document.createElement('div');
     card.className = `booking-card ${status}`;
     card.innerHTML = `
@@ -156,6 +156,9 @@ function createBookingCard(booking, roomType, typeData, bookingId) {
     `;
     return card;
 }
+
+
+
 
 function calculateNights(booking) {
     const checkIn = new Date(booking.checkInDate);

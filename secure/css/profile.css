@@ -332,3 +332,12 @@ button:hover {
     margin-top: 0.5rem;
     font-size: 0.9rem;
 }
+.booking-status.booked {
+    background-color: orange;
+    color: white;
+}
+
+.booking-status.checkedin {
+    background-color: green;
+    color: white;
+}

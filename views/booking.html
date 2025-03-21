@@ -40,6 +40,18 @@
 
     <button id="confirmBookingBtn" style="display: none;">Confirm Booking</button>
   </div>
+<!-- Bank Details Modal -->
+<div id="bankDetailsModal" class="modal" style="display: none;">
+  <div class="modal-content" style="max-width: 400px; margin: auto; padding: 1rem;">
+    <span class="close" style="cursor: pointer; float: right; font-size: 1.2rem;">&times;</span>
+    <h3>Enter Bank Details</h3>
+    <input type="text" id="cardHolderName" placeholder="Cardholder Name" required style="width: 100%; margin: 0.5rem 0; padding: 8px;">
+    <input type="text" id="cardNumber" placeholder="Card Number" required style="width: 100%; margin: 0.5rem 0; padding: 8px;">
+    <input type="text" id="expiryDate" placeholder="Expiry Date (MM/YY)" required style="width: 100%; margin: 0.5rem 0; padding: 8px;">
+    <input type="text" id="cvv" placeholder="CVV" required style="width: 100%; margin: 0.5rem 0; padding: 8px;">
+    <button id="submitBankDetailsBtn" style="background-color: #3498db; color: white; padding: 0.8rem 1.5rem; border: none; border-radius: 5px; cursor: pointer;">Submit Payment Details</button>
+  </div>
+</div>
 
   <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
   <script type="module" src="js/booking.js"></script>
