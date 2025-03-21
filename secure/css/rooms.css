@@ -182,3 +182,23 @@ a:visited {
 a:hover {
   color: #e6b800;
 }
+/* Styling the Room Section */
+.head {
+  font-family: 'Arial', sans-serif;
+  font-size: 50px;
+  font-weight: bold;
+  color: #2c3e50;
+  text-align: center;
+  margin-bottom: 20px;
+}
+
+.desc {
+  font-family: 'Georgia', serif;
+  font-size: 18px;
+  color: #343a3f;
+  text-align: center;
+  margin-bottom: 20px;
+}
+
+
+
