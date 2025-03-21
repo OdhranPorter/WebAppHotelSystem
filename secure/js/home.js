@@ -1,16 +1,8 @@
-// home.js
+import { initializeApp } from "https://www.gstatic.com/firebasejs/11.3.0/firebase-app.js";
+import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/11.3.0/firebase-auth.js";
+import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/11.3.0/firebase-firestore.js";
 
-import {
-  initializeApp
-} from "https://www.gstatic.com/firebasejs/11.3.0/firebase-app.js";
-
-import {
-  getAuth,
-  onAuthStateChanged,
-  signOut
-} from "https://www.gstatic.com/firebasejs/11.3.0/firebase-auth.js";
-
-// Your Firebase config (use the same as in login.js / rooms.js)
+// Your Firebase config
 const firebaseConfig = {
   apiKey: "AIzaSyDw5aeA0uwE7R06Ht1wjkx6TcehPWs0Hac",
   authDomain: "hotel-booking-3aad3.firebaseapp.com",
@@ -23,6 +15,7 @@ const firebaseConfig = {
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
+const db = getFirestore(app);
 
 document.addEventListener("DOMContentLoaded", () => {
   console.log("home.js loaded");
@@ -35,6 +28,10 @@ document.addEventListener("DOMContentLoaded", () => {
   const accountBtn      = document.getElementById("accountBtn");
   const accountMenu     = document.getElementById("accountMenu");
   const logoutBtn       = document.getElementById("logoutBtn");
+
+  // Get the employee-only nav links
+  const checkinLink     = document.getElementById("checkinBtn");
+  const employeeHubLink = document.getElementById("employeeHubBtn");
 
   // The hero buttons
   const heroLoginBtn = document.getElementById("loginButton");
@@ -52,7 +49,6 @@ document.addEventListener("DOMContentLoaded", () => {
   if (logoutBtn) {
     logoutBtn.addEventListener("click", async () => {
       await signOut(auth);
-      // Optionally reload or go to home
       window.location.href = "home";
     });
   }
@@ -60,8 +56,6 @@ document.addEventListener("DOMContentLoaded", () => {
   // Book Now logic
   if (bookBtn) {
     bookBtn.addEventListener("click", () => {
-      // If user is logged in => go to rooms
-      // else => go to login?from=rooms.html
       if (auth.currentUser) {
         window.location.href = "rooms";
       } else {
@@ -73,23 +67,51 @@ document.addEventListener("DOMContentLoaded", () => {
   // Hero login button
   if (heroLoginBtn) {
     heroLoginBtn.addEventListener("click", () => {
-      // Possibly pass ?from=home
       window.location.href = "login?from=home";
     });
   }
 
   // Listen for auth state
-  onAuthStateChanged(auth, (user) => {
+  onAuthStateChanged(auth, async (user) => {
     if (user) {
-      // User is logged in
+      console.log("User logged in:", user.uid);
       if (loginBtnNav)     loginBtnNav.style.display = "none"; 
       if (accountDropdown) accountDropdown.style.display = "inline-block";
       if (heroLoginBtn)    heroLoginBtn.style.display = "none";
+
+      // By default, keep employee-specific links hidden
+      if (checkinLink)     checkinLink.style.display = "none";
+      if (employeeHubLink) employeeHubLink.style.display = "none";
+
+      // Change the collection name if your data is in a different collection
+      const collectionName = "Employee"; // For example: "Employee" or "users"
+
+      try {
+        const userDocRef = doc(db, collectionName, user.uid);
+        const userDocSnap = await getDoc(userDocRef);
+        if (userDocSnap.exists()) {
+          const userData = userDocSnap.data();
+          console.log("Fetched user data:", userData);
+          // Check if the user's role is 'employee'
+          if (userData.role && userData.role.toLowerCase() === "employee") {
+            if (checkinLink)     checkinLink.style.display = "inline-block";
+            if (employeeHubLink) employeeHubLink.style.display = "inline-block";
+          } else {
+            console.log("User role is not employee:", userData.role);
+          }
+        } else {
+          console.log("No such user document found in collection:", collectionName);
+        }
+      } catch (error) {
+        console.error("Error fetching user role:", error);
+      }
     } else {
-      // User not logged in
+      // If not logged in, show default login UI and keep employee links hidden
       if (loginBtnNav)     loginBtnNav.style.display = "inline-block";
       if (accountDropdown) accountDropdown.style.display = "none";
       if (heroLoginBtn)    heroLoginBtn.style.display = "inline-block";
+      if (checkinLink)     checkinLink.style.display = "none";
+      if (employeeHubLink) employeeHubLink.style.display = "none";
     }
   });
 
@@ -100,7 +122,6 @@ document.addEventListener("DOMContentLoaded", () => {
   if (slides.length > 0) {
     let currentIndex = 0;
 
-    // Show a given slide index (hide others)
     function showSlide(index) {
       slides.forEach((slide) => {
         slide.classList.remove("active");
@@ -108,16 +129,12 @@ document.addEventListener("DOMContentLoaded", () => {
       slides[index].classList.add("active");
     }
 
-    // Advance to the next slide
     function nextSlide() {
       currentIndex = (currentIndex + 1) % slides.length;
       showSlide(currentIndex);
     }
 
-    // Display the first slide initially
     showSlide(currentIndex);
-
-    // Cycle slides every 3 seconds
     setInterval(nextSlide, 3000);
   }
 });
