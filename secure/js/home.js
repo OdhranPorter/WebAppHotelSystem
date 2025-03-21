@@ -23,15 +23,17 @@ document.addEventListener("DOMContentLoaded", () => {
   // -----------------------
   // 1) Handle Auth UI Logic
   // -----------------------
-  const loginBtnNav     = document.getElementById("loginBtn");      // The nav link
+  const loginBtnNav     = document.getElementById("loginBtn");
   const accountDropdown = document.getElementById("accountDropdown");
   const accountBtn      = document.getElementById("accountBtn");
   const accountMenu     = document.getElementById("accountMenu");
   const logoutBtn       = document.getElementById("logoutBtn");
 
-  // Get the employee-only nav links
+  // Get employee and admin-only nav links
   const checkinLink     = document.getElementById("checkinBtn");
   const employeeHubLink = document.getElementById("employeeHubBtn");
+  const adminPageLink   = document.getElementById("adminPageBtn");
+  const indexPageLink   = document.getElementById("indexPageBtn");
 
   // The hero buttons
   const heroLoginBtn = document.getElementById("loginButton");
@@ -79,12 +81,14 @@ document.addEventListener("DOMContentLoaded", () => {
       if (accountDropdown) accountDropdown.style.display = "inline-block";
       if (heroLoginBtn)    heroLoginBtn.style.display = "none";
 
-      // By default, keep employee-specific links hidden
+      // By default, keep employee and admin links hidden
       if (checkinLink)     checkinLink.style.display = "none";
       if (employeeHubLink) employeeHubLink.style.display = "none";
+      if (adminPageLink)   adminPageLink.style.display = "none";
+      if (indexPageLink)   indexPageLink.style.display = "none";
 
-      // Change the collection name if your data is in a different collection
-      const collectionName = "Employee"; // For example: "Employee" or "users"
+      // Change the collection name if needed. In this example, we use "Employee"
+      const collectionName = "Employee";
 
       try {
         const userDocRef = doc(db, collectionName, user.uid);
@@ -92,12 +96,19 @@ document.addEventListener("DOMContentLoaded", () => {
         if (userDocSnap.exists()) {
           const userData = userDocSnap.data();
           console.log("Fetched user data:", userData);
-          // Check if the user's role is 'employee'
-          if (userData.role && userData.role.toLowerCase() === "employee") {
+          const role = userData.role ? userData.role.toLowerCase() : "";
+          if (role === "employee") {
+            // Show only employee links for employee role
             if (checkinLink)     checkinLink.style.display = "inline-block";
             if (employeeHubLink) employeeHubLink.style.display = "inline-block";
+          } else if (role === "admin") {
+            // Show employee links plus admin links for admin role
+            if (checkinLink)     checkinLink.style.display = "inline-block";
+            if (employeeHubLink) employeeHubLink.style.display = "inline-block";
+            if (adminPageLink)   adminPageLink.style.display = "inline-block";
+            if (indexPageLink)   indexPageLink.style.display = "inline-block";
           } else {
-            console.log("User role is not employee:", userData.role);
+            console.log("User role is neither employee nor admin:", role);
           }
         } else {
           console.log("No such user document found in collection:", collectionName);
@@ -106,12 +117,14 @@ document.addEventListener("DOMContentLoaded", () => {
         console.error("Error fetching user role:", error);
       }
     } else {
-      // If not logged in, show default login UI and keep employee links hidden
+      // If not logged in, show login UI and keep employee/admin links hidden
       if (loginBtnNav)     loginBtnNav.style.display = "inline-block";
       if (accountDropdown) accountDropdown.style.display = "none";
       if (heroLoginBtn)    heroLoginBtn.style.display = "inline-block";
       if (checkinLink)     checkinLink.style.display = "none";
       if (employeeHubLink) employeeHubLink.style.display = "none";
+      if (adminPageLink)   adminPageLink.style.display = "none";
+      if (indexPageLink)   indexPageLink.style.display = "none";
     }
   });
 
