@@ -4,6 +4,8 @@
 let currentDocId = null;
 let currentItemType = null;
 
+
+
 /***************************************************
  * 1. IMPORTS & FIREBASE CONFIG
  ***************************************************/
@@ -48,6 +50,8 @@ const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
 const storage = getStorage(app);
+
+
 
 /***************************************************
  * HELPER: GENERATE DATE RANGE
@@ -968,10 +972,35 @@ async function loadBookings() {
 
 
 /***************************************************
- * 10. DOMContentLoaded - Main
+ * NAVBAR HANDLING
  ***************************************************/
 document.addEventListener("DOMContentLoaded", () => {
   console.log("populate.js loaded");
+
+  // NAVBAR HANDLING
+  document.querySelectorAll('.nav-link').forEach(link => {
+    link.addEventListener('click', function (e) {
+      e.preventDefault();
+      const targetId = this.getAttribute('data-target');
+      document.querySelectorAll('.section').forEach(section => {
+        section.classList.remove('active');
+      });
+      document.getElementById(targetId).classList.add('active');
+
+      // Load data for the active section
+      if (targetId === "guest-section") {
+        loadGuests();
+      } else if (targetId === "employee-section") {
+        loadEmployees();
+      } else if (targetId === "room-section") {
+        loadRooms();
+      } else if (targetId === "booking-section") {
+        loadBookings();
+      } else if (targetId === "image-section") {
+        loadAllImages(); // Load images when the image section is clicked
+      }
+    });
+  });
 
   // GUEST FORM HANDLER
   const guestForm = document.getElementById("guestForm");
@@ -1036,37 +1065,8 @@ document.addEventListener("DOMContentLoaded", () => {
       }
     });
   }
-  // Image Form Handler
-  const imageForm = document.getElementById("imageForm");
-  if (imageForm) {
-    imageForm.addEventListener("submit", async (e) => {
-      e.preventDefault();
-      const roomType = document.getElementById("image-roomType").value;
-      const fileInput = document.getElementById("image-file");
-      
-      if (fileInput.files.length === 0) {
-        alert("Please select an image file");
-        return;
-      }
+
   
-      try {
-        await uploadRoomImage(roomType, fileInput.files[0]);
-        alert("Image added to array successfully!");
-        imageForm.reset();
-        loadImages();
-      } catch (error) {
-        console.error("Upload error:", error);
-        alert(error.message);
-      }
-    });
-  }
-
-// Load Images Handler
-window.loadImages = async function() {
-  const roomType = document.getElementById("view-images-roomType").value;
-  await loadRoomImages(roomType);
-};
-
   // UNIFIED DELETE HANDLER
   const deleteTypeSelect = document.getElementById("deleteTypeSelect");
   const deleteIdInput = document.getElementById("deleteIdInput");
@@ -1089,167 +1089,12 @@ window.loadImages = async function() {
     });
   }
 
-/***************************************************
- * IMAGE HANDLING FUNCTIONS (ARRAY VERSION)
- ***************************************************/
-async function uploadRoomImage(roomType, file) {
-  try {
-    const reader = new FileReader();
-    reader.readAsDataURL(file);
-    
-    return new Promise((resolve, reject) => {
-      reader.onload = async () => {
-        const base64String = reader.result;
-        const roomTypeRef = doc(db, "RoomType", roomType);
-
-        // Create or update the RoomType document with array
-        await setDoc(roomTypeRef, {
-          images: arrayUnion(base64String),
-        }, { merge: true });
-
-        resolve();
-      };
-      reader.onerror = error => reject(error);
-    });
-  } catch (error) {
-    console.error("Error uploading image:", error);
-    throw error;
+  // Load initial data if the guest section is active by default
+  if (document.getElementById("guest-section").classList.contains("active")) {
+    loadGuests();
   }
-}
-
-async function loadRoomImages(roomType) {
-  const gallery = document.getElementById("image-gallery");
-  gallery.innerHTML = "";
-  
-  try {
-    const roomTypeRef = doc(db, "RoomType", roomType);
-    const docSnap = await getDoc(roomTypeRef);
-
-    if (docSnap.exists()) {
-      const data = docSnap.data();
-      if (data.images && data.images.length > 0) {
-        data.images.forEach((image, index) => {
-          const imgContainer = document.createElement("div");
-          imgContainer.className = "image-item";
-          
-          const img = document.createElement("img");
-          img.src = image;
-          img.alt = `${roomType} image ${index + 1}`;
-          
-          const deleteBtn = document.createElement("button");
-          deleteBtn.textContent = "Delete";
-          deleteBtn.onclick = () => deleteImage(roomType, image);
-          
-          imgContainer.appendChild(img);
-          imgContainer.appendChild(deleteBtn);
-          gallery.appendChild(imgContainer);
-        });
-      }
-    }
-  } catch (error) {
-    console.error("Error loading images:", error);
-  }
-}
-
-async function deleteImage(roomType, imageToDelete) {
-  try {
-    const roomTypeRef = doc(db, "RoomType", roomType);
-    await updateDoc(roomTypeRef, {
-      images: arrayRemove(imageToDelete)
-    });
-    loadImages();
-  } catch (error) {
-    console.error("Error deleting image:", error);
-  }
-}
-/***************************************************
- * UPDATED DOMCONTENTLOADED SECTION
- ***************************************************/
-document.addEventListener("DOMContentLoaded", () => {
-  // ... existing code ...
-
-  // Image Form Handler
-  const imageForm = document.getElementById("imageForm");
-  if (imageForm) {
-    imageForm.addEventListener("submit", async (e) => {
-      e.preventDefault();
-      const roomType = document.getElementById("image-roomType").value;
-      const fileInput = document.getElementById("image-file");
-      
-      if (fileInput.files.length === 0) {
-        alert("Please select an image file");
-        return;
-      }
-
-      try {
-        await uploadRoomImage(roomType, fileInput.files[0]);
-        alert("Image uploaded successfully!");
-        imageForm.reset();
-        loadImages();
-      } catch (error) {
-        console.error("Upload error:", error);
-        alert(error.message);
-      }
-    });
-  }
-
-  // Load Images Handler
-  window.loadImages = async function() {
-    const roomType = document.getElementById("view-images-roomType").value;
-    await loadRoomImages(roomType);
-  };
 });
 
-  /***************************************************
-   * NAVBAR HANDLING
-   ***************************************************/
-  document.querySelectorAll('.nav-link').forEach(link => {
-    link.addEventListener('click', function (e) {
-      e.preventDefault();
-      const targetId = this.getAttribute('data-target');
-      document.querySelectorAll('.section').forEach(section => {
-        section.classList.remove('active');
-      });
-      document.getElementById(targetId).classList.add('active');
-      if (targetId === "guest-section") {
-        loadGuests();
-      } else if (targetId === "employee-section") {
-        loadEmployees();
-      } else if (targetId === "room-section") {
-        loadRooms();
-      }
-      if (targetId === "booking-section") {
-        loadBookings();
-      }
-      // Add similar calls for other sections if needed.
-    });
-  });
-});
-
-
-async function uploadImageToCollection(imageName, file) {
-  try {
-    // Upload to Firebase Storage
-    const storageRef = ref(storage, `images/${imageName}`);
-    await uploadBytes(storageRef, file);
-    const downloadURL = await getDownloadURL(storageRef);
-
-    // Save metadata to Firestore
-    await setDoc(doc(db, "Images", imageName), {
-      url: downloadURL,
-      uploadedAt: new Date().toISOString()
-    });
-    
-    return downloadURL;
-  } catch (error) {
-    console.error("Upload error:", error);
-    throw error;
-  }
-}
-
-/***************************************************
- * LOAD IMAGES FROM 'IMAGES' COLLECTION
- ***************************************************/
 async function loadAllImages() {
   const gallery = document.getElementById("image-gallery");
   gallery.innerHTML = "";
@@ -1285,17 +1130,10 @@ async function loadAllImages() {
   }
 }
 
-/***************************************************
- * DELETE IMAGE FROM COLLECTION & STORAGE
- ***************************************************/
 async function deleteImageFromCollection(imageName) {
   try {
     // Delete from Firestore
     await deleteDoc(doc(db, "Images", imageName));
-    
-    // Delete from Storage
-    const storageRef = ref(storage, `images/${imageName}`);
-    await deleteObject(storageRef);
     
     alert("Image deleted successfully!");
     loadAllImages();
@@ -1306,7 +1144,7 @@ async function deleteImageFromCollection(imageName) {
 }
 
 /***************************************************
- * UPDATE IMAGE FORM HANDLER
+ * IMAGE FORM HANDLER
  ***************************************************/
 document.addEventListener("DOMContentLoaded", () => {
   const imageForm = document.getElementById("imageForm");
@@ -1331,6 +1169,25 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
+
+
   // Update the loadImages handler
   window.loadImages = loadAllImages;
 });
+async function uploadImageToCollection(imageName, file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.readAsDataURL(file);
+    reader.onload = async () => {
+      try {
+        const base64Data = reader.result; // Base64 image string
+        // Save the Base64 URL directly to Firestore under "Images" collection.
+        await setDoc(doc(db, "Images", imageName), { url: base64Data });
+        resolve();
+      } catch (error) {
+        reject(error);
+      }
+    };
+    reader.onerror = (error) => reject(error);
+  });
+}

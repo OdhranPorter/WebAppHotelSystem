@@ -254,29 +254,29 @@
     </div>
 
     <!-- Image Section -->
-    <div id="image-section" class="section">
-      <h1>Image Management</h1>
-      <!-- Upload Form -->
-      <form id="imageForm">
-        <div class="form-group">
-          <label>Image Name:</label>
-          <input type="text" id="image-name" placeholder="Unique Image Name" required />
-        </div>
-        <div class="form-group">
-          <label>Select Image:</label>
-          <input type="file" id="image-file" accept="image/*" required>
-        </div>
-        <button type="submit">Upload Image</button>
-      </form>
-      <!-- Image Gallery -->
-      <div class="image-gallery-container">
-        <h2>All Images</h2>
-        <div class="search-box">
-          <button onclick="loadImages()">Load All Images</button>
-        </div>
-        <div id="image-gallery" class="image-gallery"></div>
-      </div>
+<div id="image-section" class="section">
+  <h1>Image Management</h1>
+  <!-- Upload Form -->
+  <form id="imageForm">
+    <div class="form-group">
+      <label>Image Name:</label>
+      <input type="text" id="image-name" placeholder="Unique Image Name" required />
     </div>
+    <div class="form-group">
+      <label>Select Image:</label>
+      <input type="file" id="image-file" accept="image/*" required>
+    </div>
+    <button type="submit">Upload Image</button>
+  </form>
+  <!-- Image Gallery -->
+  <div class="image-gallery-container">
+    <h2>All Images</h2>
+    <div class="search-box">
+      <button onclick="loadImages()">Load All Images</button>
+    </div>
+    <div id="image-gallery" class="image-gallery"></div>
+  </div>
+</div>
 
     <!-- Link to the main JavaScript logic -->
     <script type="module" src="/js/populate.js"></script>
