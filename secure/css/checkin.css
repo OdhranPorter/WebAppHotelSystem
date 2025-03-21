@@ -6,6 +6,43 @@ body {
     padding: 20px;
 }
 
+header {
+    background-color: #333;
+    color: #fff;
+    padding: 1rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  header .logo {
+    display: flex;
+    align-items: center;
+  }
+  header .logo img {
+    height: 50px;
+    margin-right: 10px;
+  }
+  header nav a {
+    color: #fff;
+    text-decoration: none;
+    margin-left: 20px;
+  
+  }
+  header nav a:hover {
+    text-decoration: underline;
+  }
+
+  /* Prevents links from turning purple */
+a:visited {
+    color: white;
+  }
+  
+  /* Hover effect */
+  a:hover {
+    color: #e6b800;
+  }
+  
+  
 .container {
     max-width: 1200px;
     margin: 0 auto;

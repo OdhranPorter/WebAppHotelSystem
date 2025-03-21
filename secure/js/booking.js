@@ -1,5 +1,3 @@
-// booking.js
-
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.3.0/firebase-app.js";
 import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.3.0/firebase-auth.js";
 import {
@@ -18,7 +16,7 @@ const firebaseConfig = {
   apiKey: "AIzaSyDw5aeA0uwE7R06Ht1wjkx6TcehPWs0Hac",
   authDomain: "hotel-booking-3aad3.firebaseapp.com",
   projectId: "hotel-booking-3aad3",
-  storageBucket: "hotel-booking-3aad3.firebasestorage.app",
+  storageBucket: "hotel-booking-3aad3.appspot.com",
   messagingSenderId: "385718256742",
   appId: "1:385718256742:web:03fc7761dbf7e7345ad9a7"
 };
@@ -32,11 +30,16 @@ const datePickerInput = document.getElementById("datePicker");
 const confirmBookingBtn = document.getElementById("confirmBookingBtn");
 const roomTypeDisplay = document.getElementById("roomTypeDisplay");
 const priceDisplay = document.getElementById("priceDisplay");
+const bankDetailsModal = document.getElementById("bankDetailsModal");
+const submitBankDetailsBtn = document.getElementById("submitBankDetailsBtn");
+const closeModalBtn = bankDetailsModal.querySelector(".close");
 
-// Get roomType from URL
+// Global variables
+let roomPrice = 0;
 const urlParams = new URLSearchParams(window.location.search);
 const roomType = urlParams.get("roomType");
 let selectedRoomId = null;
+let currentBookingId = null;
 
 onAuthStateChanged(auth, async (user) => {
   if (!user) {
@@ -59,15 +62,15 @@ onAuthStateChanged(auth, async (user) => {
       return;
     }
     const typeData = typeDoc.data();
+    roomPrice = typeData.price;
     
     // Update UI
     roomTypeDisplay.textContent = `${roomType} Room`;
-    priceDisplay.textContent = `€${typeData.price}/night`;
-
-    // Fetch fully booked dates for the room type
-    const fullyBookedDates = await getFullyBookedDates(roomType);
+    priceDisplay.textContent = `€${roomPrice}/night`;
 
     // Initialize date picker with disabled dates
+    const fullyBookedDates = await getFullyBookedDates(roomType);
+    
     flatpickr(datePickerInput, {
       mode: "range",
       dateFormat: "Y-m-d",
@@ -75,8 +78,6 @@ onAuthStateChanged(auth, async (user) => {
       disable: fullyBookedDates,
       onChange: async (selectedDates, dateStr, instance) => {
         const bookingSummary = document.getElementById('bookingSummary');
-        const confirmBtn = document.getElementById('confirmBookingBtn');
-        
         if (selectedDates.length === 2) {
           selectedRoomId = await findAvailableRoom(roomType, selectedDates);
           
@@ -84,24 +85,25 @@ onAuthStateChanged(auth, async (user) => {
             alert("No available rooms for selected dates");
             instance.clear();
             bookingSummary.style.display = 'none';
-            confirmBtn.style.display = 'none';
+            confirmBookingBtn.style.display = 'none';
           } else {
             // Show booking summary
             bookingSummary.style.display = 'block';
-            confirmBtn.style.display = 'inline-block';
+            const nights = Math.ceil((selectedDates[1] - selectedDates[0]) / (1000 * 3600 * 24));
+            const totalCost = nights * roomPrice;
+            
             document.getElementById('summaryRoomType').textContent = `${roomType} Room`;
             document.getElementById('summaryRoomId').textContent = selectedRoomId;
             document.getElementById('summaryDates').textContent = 
               `${instance.formatDate(selectedDates[0], "Y-m-d")} to ${instance.formatDate(selectedDates[1], "Y-m-d")}`;
-            
-            // Calculate total nights and price
-            const nights = Math.ceil((selectedDates[1] - selectedDates[0]) / (1000 * 3600 * 24));
             document.getElementById('summaryNights').textContent = nights;
-            document.getElementById('summaryPrice').textContent = nights * typeData.price;
+            document.getElementById('summaryPrice').textContent = totalCost;
+            
+            confirmBookingBtn.style.display = 'inline-block';
           }
         } else {
           bookingSummary.style.display = 'none';
-          confirmBtn.style.display = 'none';
+          confirmBookingBtn.style.display = 'none';
         }
       }
     });
@@ -114,40 +116,26 @@ async function getFullyBookedDates(roomType) {
   const fullyBookedDates = [];
   const roomsQuery = query(collection(db, "Room"), where("type", "==", roomType));
   const roomsSnapshot = await getDocs(roomsQuery);
-
-  // Get all rooms of this type
   const roomIds = roomsSnapshot.docs.map(doc => doc.id);
-
-  // Create a map to track booked dates for each room
   const bookedDatesMap = new Map();
 
-  // Fetch bookings for each room
   for (const roomId of roomIds) {
     const bookingsQuery = query(collection(db, "Booking"), where("roomID", "==", roomId));
     const bookingsSnapshot = await getDocs(bookingsQuery);
-
     const bookedDates = [];
     for (const bookingDoc of bookingsSnapshot.docs) {
       const bookingData = bookingDoc.data();
       const startDate = new Date(bookingData.checkInDate);
       const endDate = new Date(bookingData.checkOutDate);
-
-      // Add each date in the range to the bookedDates array
-      for (let d = startDate; d <= endDate; d.setDate(d.getDate() + 1)) {
-        bookedDates.push(d.toISOString().split('T')[0]);
+      for (let d = new Date(startDate); d <= endDate; d.setDate(d.getDate() + 1)) {
+        bookedDates.push(new Date(d).toISOString().split('T')[0]);
       }
     }
-
-    // Store booked dates for this room
     bookedDatesMap.set(roomId, bookedDates);
   }
 
-  // Determine fully booked dates
   if (roomIds.length > 0) {
-    // Get all unique dates from all rooms
     const allDates = [...new Set([...bookedDatesMap.values()].flat())];
-
-    // Check each date to see if it's fully booked
     for (const date of allDates) {
       let isFullyBooked = true;
       for (const roomId of roomIds) {
@@ -161,98 +149,84 @@ async function getFullyBookedDates(roomType) {
       }
     }
   }
-
   return fullyBookedDates;
 }
 
 async function findAvailableRoom(roomType, selectedDates) {
   const [startDate, endDate] = selectedDates;
-
-  // Get all rooms of this type
   const roomsQuery = query(collection(db, "Room"), where("type", "==", roomType));
   const roomsSnapshot = await getDocs(roomsQuery);
 
   for (const roomDoc of roomsSnapshot.docs) {
     const roomId = roomDoc.id;
-
-    // Check if the room is available for the selected dates
     const isAvailable = await isRoomAvailable(roomId, startDate, endDate);
     if (isAvailable) {
-      return roomId; // Return the first available room ID
+      return roomId;
     }
   }
-  return null; // No available rooms
+  return null;
 }
 
 async function isRoomAvailable(roomId, startDate, endDate) {
-  // Query bookings for the selected room
-  const bookingsQuery = query(
-    collection(db, "Booking"),
-    where("roomID", "==", roomId)
-  );
+  const bookingsQuery = query(collection(db, "Booking"), where("roomID", "==", roomId));
   const bookingsSnapshot = await getDocs(bookingsQuery);
 
   for (const bookingDoc of bookingsSnapshot.docs) {
     const bookingData = bookingDoc.data();
     const bookingStart = new Date(bookingData.checkInDate);
     const bookingEnd = new Date(bookingData.checkOutDate);
-
-    // Check for overlapping dates
     if (
-      (startDate >= bookingStart && startDate < bookingEnd) || // New booking starts during an existing booking
-      (endDate > bookingStart && endDate <= bookingEnd) || // New booking ends during an existing booking
-      (startDate <= bookingStart && endDate >= bookingEnd) // New booking spans an existing booking
+      (startDate >= bookingStart && startDate < bookingEnd) ||
+      (endDate > bookingStart && endDate <= bookingEnd) ||
+      (startDate <= bookingStart && endDate >= bookingEnd)
     ) {
-      return false; // Room is not available
+      return false;
     }
   }
-  return true; // Room is available
+  return true;
 }
 
 // Confirm booking handler
-if (confirmBookingBtn) {
-  confirmBookingBtn.addEventListener("click", async () => {
-    const fpInstance = datePickerInput._flatpickr;
-    if (!selectedRoomId || !fpInstance || fpInstance.selectedDates.length !== 2) {
-      alert("Please select valid dates first");
+confirmBookingBtn?.addEventListener("click", async () => {
+  const fpInstance = datePickerInput._flatpickr;
+  if (!selectedRoomId || !fpInstance || fpInstance.selectedDates.length !== 2) {
+    alert("Please select valid dates first");
+    return;
+  }
+
+  try {
+    const startDate = fpInstance.selectedDates[0];
+    const endDate = fpInstance.selectedDates[1];
+    const nights = Math.ceil((endDate - startDate) / (1000 * 3600 * 24));
+    const totalCost = nights * roomPrice;
+
+    const isAvailable = await isRoomAvailable(selectedRoomId, startDate, endDate);
+    if (!isAvailable) {
+      alert("Room no longer available");
       return;
     }
 
-    try {
-      // Check if the room is still available for the selected dates
-      const isAvailable = await isRoomAvailable(
-        selectedRoomId,
-        fpInstance.selectedDates[0],
-        fpInstance.selectedDates[1]
-      );
+    const bookingId = await getNextBookingId();
+    const bookingIdStr = `B${bookingId}`;
+    currentBookingId = bookingIdStr;
 
-      if (!isAvailable) {
-        alert("The room is no longer available for the selected dates. Please choose different dates.");
-        return;
-      }
+    await setDoc(doc(db, "Booking", bookingIdStr), {
+      bookID: bookingIdStr,
+      guestID: auth.currentUser.uid,
+      roomID: selectedRoomId,
+      checkInDate: fpInstance.formatDate(startDate, "Y-m-d"),
+      checkOutDate: fpInstance.formatDate(endDate, "Y-m-d"),
+      status: "booked",
+      total: totalCost,
+      timestamp: new Date()
+    });
 
-      // Generate booking ID
-      const bookingId = await getNextBookingId();
-      const bookingIdStr = `B${bookingId}`;
-
-      // Create booking document
-      await setDoc(doc(db, "Booking", bookingIdStr), {
-        bookID: bookingIdStr,
-        guestID: auth.currentUser.uid,
-        roomID: selectedRoomId,
-        checkInDate: fpInstance.formatDate(fpInstance.selectedDates[0], "Y-m-d"),
-        checkOutDate: fpInstance.formatDate(fpInstance.selectedDates[1], "Y-m-d"),
-        status: "booked"
-      });
-
-      alert(`Booking confirmed! Room: ${selectedRoomId}`);
-      window.location.href = "profile";
-    } catch (error) {
-      console.error("Booking failed:", error);
-      alert(`Booking failed: ${error.message}`);
-    }
-  });
-}
+    bankDetailsModal.style.display = "block";
+  } catch (error) {
+    console.error("Booking failed:", error);
+    alert(`Booking failed: ${error.message}`);
+  }
+});
 
 async function getNextBookingId() {
   const counterRef = doc(db, "Counters", "bookingCounter");
@@ -261,11 +235,51 @@ async function getNextBookingId() {
     if (!counterSnap.exists()) {
       transaction.set(counterRef, { count: 1 });
       return 1;
-    } else {
-      const currentCount = counterSnap.data().count || 0;
-      const newCount = currentCount + 1;
-      transaction.update(counterRef, { count: newCount });
-      return newCount;
     }
+    const newCount = (counterSnap.data().count || 0) + 1;
+    transaction.update(counterRef, { count: newCount });
+    return newCount;
   });
 }
+
+// Payment handling
+submitBankDetailsBtn?.addEventListener("click", async () => {
+  const cardHolderName = document.getElementById("cardHolderName").value;
+  const cardNumber = document.getElementById("cardNumber").value;
+  const expiryDate = document.getElementById("expiryDate").value;
+  const cvv = document.getElementById("cvv").value;
+
+  if (!cardHolderName || !cardNumber || !expiryDate || !cvv) {
+    alert("Please fill all payment fields");
+    return;
+  }
+
+  try {
+    await setDoc(doc(db, "Payments", currentBookingId), {
+      bookingID: currentBookingId,
+      guestID: auth.currentUser.uid,
+      cardHolderName,
+      cardNumber,
+      expiryDate,
+      cvv,
+      timestamp: new Date()
+    });
+    alert("Payment successful!");
+    bankDetailsModal.style.display = "none";
+    window.location.href = "profile";
+  } catch (error) {
+    console.error("Payment failed:", error);
+    alert("Payment failed: " + error.message);
+  }
+});
+
+// Modal controls
+closeModalBtn?.addEventListener("click", () => {
+  bankDetailsModal.style.display = "none";
+});
+
+window.addEventListener("click", (event) => {
+  if (event.target === bankDetailsModal) {
+    bankDetailsModal.style.display = "none";
+  }
+});

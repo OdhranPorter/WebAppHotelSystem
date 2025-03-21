@@ -4,25 +4,42 @@
     box-sizing: border-box;
 }
 
-.home-button-container {
-    position: absolute;
-    top: 20px;
-    right: 20px;
-}
-
-.home-button {
-    background-color: #3498db;
-    color: white;
-    padding: 0.8rem 1.5rem;
-    border-radius: 25px;
+header {
+    background-color: #333;
+    color: #fff;
+    padding: 1rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  header .logo {
+    display: flex;
+    align-items: center;
+  }
+  header .logo img {
+    height: 50px;
+    margin-right: 10px;
+  }
+  header nav a {
+    color: #fff;
     text-decoration: none;
-    font-weight: bold;
-    transition: background-color 0.3s ease;
-}
+    margin-left: 20px;
+  
+  }
+  header nav a:hover {
+    text-decoration: underline;
+  }
 
-.home-button:hover {
-    background-color: #2980b9;
-}
+  /* Prevents links from turning purple */
+a:visited {
+    color: white;
+  }
+  
+  /* Hover effect */
+  a:hover {
+    color: #e6b800;
+  }
+  
 
 body {
     font-family: 'Arial', sans-serif;
@@ -331,4 +348,46 @@ button:hover {
     color: #dc3545;
     margin-top: 0.5rem;
     font-size: 0.9rem;
+}
+.booking-status.booked {
+    background-color: orange;
+    color: white;
+}
+
+.booking-status.checkedin {
+    background-color: green;
+    color: white;
+}
+
+.edit-extras-btn {
+    background: #3498db;
+    color: white;
+    border: none;
+    padding: 0.8rem 1.5rem;
+    border-radius: 25px;
+    cursor: pointer;
+    transition: background 0.2s ease;
+    margin-top: 1.5rem;
+    font-weight: bold;
+}
+
+.edit-extras-btn:hover {
+    background: #2980b9;
+}
+
+/* Existing cancel button for reference */
+.cancel-btn {
+    background: #ff4444;
+    color: white;
+    border: none;
+    padding: 0.8rem 1.5rem;
+    border-radius: 25px;
+    cursor: pointer;
+    transition: background 0.2s ease;
+    margin-top: 1.5rem;
+    font-weight: bold;
+}
+
+.cancel-btn:hover {
+    background: #cc0000;
 }

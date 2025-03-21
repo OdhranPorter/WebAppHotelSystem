@@ -112,27 +112,27 @@ onAuthStateChanged(auth, async (user) => {
 });
 
 function createBookingCard(booking, roomType, typeData, bookingId) {
+    // Convert status to lowercase for consistency
     const status = booking.status.toLowerCase();
-    const nights = calculateNights(booking);
-    const roomCost = typeData.price * nights;
-
+    
     // Start with the Cancel Booking button
     let buttons = `<button class="cancel-btn" onclick="cancelBooking('${bookingId}', '${status}')">
                         Cancel Booking
                    </button>`;
 
-    // If status is pending (if that ever occurs), show a Pay Now button.
-    // Otherwise, if status is "booked" or "checked in", show the Edit Extras button.
+    // If status is pending, show the "Pay Now" button.
     if (status === 'pending') {
-        buttons += `<button class="pay-btn" onclick="showPaymentModal('${bookingId}', ${typeData.price}, ${nights})">
-                        Pay Now (€${roomCost})
+        buttons += `<button class="pay-btn" onclick="showPaymentModal('${bookingId}', ${typeData.price}, ${calculateNights(booking)})">
+                        Pay Now (€${typeData.price * calculateNights(booking)})
                     </button>`;
-    } else if (status === 'booked' || status === 'checked in') {
+    }
+    // Only show the Edit Extras button if the room is "checkedin"
+    else if (status === 'checkedin') {
         buttons += `<button class="edit-extras-btn" onclick="showExtrasModal('${bookingId}')">
                         Edit Extras
                     </button>`;
     }
-
+    
     const card = document.createElement('div');
     card.className = `booking-card ${status}`;
     card.innerHTML = `
@@ -140,7 +140,7 @@ function createBookingCard(booking, roomType, typeData, bookingId) {
             <img src="${typeData.images[0]}" alt="${roomType} Room" class="booking-image">
         </div>
         <div class="booking-details">
-            <h3 class="booking-type">${roomType} Room</h3>
+            <h3 class="booking-type">${roomType} Room (Booking #${bookingId})</h3>
             <p class="booking-dates">${formatDate(booking.checkInDate)} - ${formatDate(booking.checkOutDate)}</p>
             <div class="booking-status ${status}">${status.toUpperCase()}</div>
             <ul class="amenities-list">
@@ -156,6 +156,9 @@ function createBookingCard(booking, roomType, typeData, bookingId) {
     `;
     return card;
 }
+
+
+
 
 function calculateNights(booking) {
     const checkIn = new Date(booking.checkInDate);
@@ -242,40 +245,37 @@ window.calculateExtras = function() {
     document.getElementById('extrasTotal').textContent = total.toFixed(2);
 };
 
+// In the saveExtras function - remove the payment handling
 window.saveExtras = async function() {
-    // Recalculate extras to ensure latest selections are recorded
     window.calculateExtras();
 
-    // Require at least one extra to be selected
     if (currentExtrasBooking.extrasCost === 0) {
         alert("Please select at least one extra before proceeding.");
         return;
     }
 
     try {
-        // Update the booking document with extras details
         await updateDoc(doc(db, "Booking", currentExtrasBooking.id), {
             extras: currentExtrasBooking.extras,
             extrasCost: currentExtrasBooking.extrasCost,
-            extrasPaid: false
+            extrasPaid: true // Mark as paid automatically since we're removing payment
         });
-        alert("Extras updated.");
+        alert("Extras updated successfully!");
         extrasModal.style.display = 'none';
+        location.reload(); // Refresh to show updated extras
 
-        // Since the room has already been paid (status "checked in"),
-        // extras are paid separately.
-        currentPaymentBooking = {
-            id: currentExtrasBooking.id,
-            amount: currentExtrasBooking.extrasCost,
-            extras: true
-        };
-        document.getElementById('paymentAmount').textContent = currentPaymentBooking.amount.toFixed(2);
-        paymentModal.style.display = 'block';
     } catch (error) {
         console.error("Failed to update extras:", error);
         alert("Error updating extras: " + error.message);
     }
 };
+
+// Remove the payment modal trigger from the createBookingCard function
+if (status === 'checkedin') {
+    buttons += `<button class="edit-extras-btn" onclick="showExtrasModal('${bookingId}')">
+                    Edit Extras
+                </button>`;
+}
 
 // ---------------- Payment Handling ----------------
 
