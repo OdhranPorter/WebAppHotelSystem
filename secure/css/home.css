@@ -36,9 +36,6 @@ header nav a {
   margin-left: 20px;
 
 }
-header nav a:hover {
-  text-decoration: underline;
-}
 
 /* ======================
    Hero Section
@@ -246,3 +243,20 @@ footer {
   box-shadow: 0 2px 5px rgba(0,0,0,0.3);
   z-index: 1000; /* Ensure it's on top */
 }
+/* Fix purple links */
+a{
+  color: white; /* Sets the default color */
+  text-decoration: none;
+  font-size: 18px;
+}
+
+/* Prevents links from turning purple */
+a:visited {
+  color: white;
+}
+
+/* Hover effect */
+a:hover {
+  color: #e6b800;
+}
+
