@@ -2,16 +2,23 @@
     margin: 0;
     padding: 0;
     box-sizing: border-box;
+
 }
 
 header {
     background-color: #333;
     color: #fff;
-    padding: 1rem;
+    padding: 1rem 2rem;
+    width: 100%;
+    box-sizing: border-box; /* Ensures padding doesn't affect width */
+    position: fixed; /* Makes the header stay at the top */
+    top: 0;
+    left: 0;
+    z-index: 1000; /* Ensures it's above other elements */
     display: flex;
     align-items: center;
     justify-content: space-between;
-  }
+}
   header .logo {
     display: flex;
     align-items: center;
@@ -20,33 +27,37 @@ header {
     height: 50px;
     margin-right: 10px;
   }
-  header nav a {
-    color: #fff;
-    text-decoration: none;
-    margin-left: 20px;
-  
-  }
-  header nav a:hover {
-    text-decoration: underline;
-  }
-
   /* Prevents links from turning purple */
 a:visited {
     color: white;
   }
   
-  /* Hover effect */
-  a:hover {
-    color: #e6b800;
-  }
+/* Style for the links container */
+.links {
+    display: flex;
+    gap: 20px; /* Adds space between links */
+}
+
+/* Base link styling */
+a {
+    text-decoration: none; /* Remove default underline */
+    color: #fff; /* Default text color */
+    font-size: 1rem;
+}
+
+/* Hover effect */
+a:hover {
+    color: #f4a261; /* Change text color on hover */
+}
   
 
 body {
     font-family: 'Arial', sans-serif;
-    background: #f8f9fa;
+     background-color: #c9c1c1;
     color: #333;
     line-height: 1.6;
     padding: 20px;
+    margin-top: 100px;
 }
 
 .container {
@@ -391,3 +402,15 @@ button:hover {
 .cancel-btn:hover {
     background: #cc0000;
 }
+footer {
+    background-color: #111213;
+    color: white;
+    text-align: center;
+    padding: 15px 0;
+    position: fixed;
+    width: 100%;
+    bottom: 0;
+    left: 0;
+    font-size: 14px;
+    margin-top: auto;
+  }
