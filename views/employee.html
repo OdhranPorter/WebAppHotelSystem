@@ -35,13 +35,13 @@
     <h1>Employee Dashboard</h1>
 
     <div class="employee-container">
-      <!-- Room Types List -->
+      <!-- Room Types & Rooms Section -->
       <section class="employee-section">
         <h2>Room Types & Rooms</h2>
         <div id="roomTypesList" class="room-types-container"></div>
       </section>
 
-      <!-- Bookings table -->
+      <!-- Bookings Section -->
       <section class="employee-section">
         <h2>All Bookings</h2>
         <table id="bookingsTable">
@@ -58,12 +58,12 @@
             </tr>
           </thead>
           <tbody>
-            <!-- dynamically loaded by employee.js -->
+            <!-- Dynamically loaded by employee.js -->
           </tbody>
         </table>
       </section>
 
-      <!-- Amenities Management -->
+      <!-- Amenities Section -->
       <section class="employee-section">
         <h2>Manage Amenities</h2>
         <form id="amenityForm">
@@ -73,9 +73,22 @@
         </form>
         <div id="amenitiesList" class="amenities-grid"></div>
       </section>
+
+      <!-- Extras Section -->
+      <section class="employee-section">
+        <h2>Manage Extras</h2>
+        <form id="addExtraForm">
+          <input type="text" id="newExtraId" placeholder="Extra ID (e.g. breakfast)" required>
+          <input type="text" id="newExtraName" placeholder="Extra Name" required>
+          <input type="number" id="newExtraPrice" placeholder="Price" required step="0.01">
+          <button type="submit">Add Extra</button>
+        </form>
+        <div id="extrasList" class="room-types-container"></div>
+      </section>
     </div>
   </main>
-  <!-- Add this before </body> -->
+
+  <!-- Edit Room Type Modal -->
   <div id="editTypeModal" class="modal">
     <div class="modal-content">
       <span class="close">&times;</span>
@@ -84,20 +97,34 @@
         <label>Type Name:
           <input type="text" id="editTypeName" required>
         </label>
-        
         <label>Price per Night (€):
           <input type="number" id="editTypePrice" required step="0.01">
         </label>
-  
         <h3>Amenities</h3>
         <div id="editTypeAmenities" class="amenity-checkboxes"></div>
-  
         <h3>Room Images</h3>
         <div class="image-uploads">
           <input type="file" id="editTypeImages" multiple accept="image/*">
           <div class="image-preview" id="editTypeImagePreview"></div>
         </div>
-  
+        <button type="submit">Save Changes</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Edit Extra Modal -->
+  <div id="editExtraModal" class="modal">
+    <div class="modal-content">
+      <span class="close" id="closeEditExtraModal">&times;</span>
+      <h2>Edit Extra</h2>
+      <form id="editExtraForm">
+        <input type="hidden" id="editExtraId">
+        <label>Extra Name:
+          <input type="text" id="editExtraName" required>
+        </label>
+        <label>Price:
+          <input type="number" id="editExtraPrice" required step="0.01">
+        </label>
         <button type="submit">Save Changes</button>
       </form>
     </div>
