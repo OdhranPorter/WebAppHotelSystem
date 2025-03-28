@@ -1,13 +1,15 @@
-import { initializeApp } from "https://www.gstatic.com/firebasejs/11.3.0/firebase-app.js";
-import {
-  getFirestore,
-  collection,
-  query,
-  where,
-  getDocs,
-  doc,
+import { 
+  initializeApp 
+} from "https://www.gstatic.com/firebasejs/11.3.0/firebase-app.js";
+import { 
+  getFirestore, 
+  collection, 
+  query, 
+  where, 
+  getDocs, 
+  doc, 
   getDoc,    
-  updateDoc
+  updateDoc 
 } from "https://www.gstatic.com/firebasejs/11.3.0/firebase-firestore.js";
 
 const firebaseConfig = {
@@ -22,16 +24,34 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
+/**
+ * Helper function to parse a date from a Firestore Timestamp or a string.
+ */
+function parseDate(dateField) {
+  if (dateField && typeof dateField.toDate === 'function') {
+    return dateField.toDate();
+  } else {
+    return new Date(dateField);
+  }
+}
+
+/**
+ * Loads all bookings with status "booked", then splits them into two groups:
+ * - Check-In: bookings whose checkInDate equals today.
+ * - Check-Out: bookings whose checkOutDate equals today.
+ * A search term (if provided) is applied to both groups.
+ */
 async function loadBookings(searchTerm = '') {
-  const bookingsList = document.getElementById("bookingsList");
-  bookingsList.innerHTML = "<p>Loading bookings...</p>";
+  const checkinList = document.getElementById("checkinBookingsList");
+  const checkoutList = document.getElementById("checkoutBookingsList");
+  checkinList.innerHTML = "<p>Loading check-in bookings...</p>";
+  checkoutList.innerHTML = "<p>Loading check-out bookings...</p>";
   
   try {
     const q = query(
       collection(db, "Booking"),
       where("status", "==", "booked")
     );
-    
     const querySnapshot = await getDocs(q);
     const bookings = [];
 
@@ -41,14 +61,10 @@ async function loadBookings(searchTerm = '') {
       let debugInfo = '';
 
       try {
-        console.log(`Fetching guest: ${booking.guestID}`);
         const guestRef = doc(db, "Guest", booking.guestID);
         const guestSnap = await getDoc(guestRef);
-
         if (guestSnap.exists()) {
           const guestData = guestSnap.data();
-          console.log("Guest data:", guestData);
-          
           if (guestData.fName && guestData.sName) {
             guestName = `${guestData.fName} ${guestData.sName}`;
           } else {
@@ -69,34 +85,53 @@ async function loadBookings(searchTerm = '') {
       });
     }
 
-    // Filter bookings for the current date only.
-    const today = new Date().toDateString();
-    const todaysBookings = bookings.filter(booking => {
-      // Convert booking.checkInDate to a Date object and then to a string.
-      return new Date(booking.checkInDate).toDateString() === today;
+    // Get today's date string for comparison
+    const todayStr = new Date().toDateString();
+    
+    // Filter for check-in bookings: booking.checkInDate equals today.
+    const checkinBookings = bookings.filter(booking => {
+      const checkInDate = parseDate(booking.checkInDate).toDateString();
+      return checkInDate === todayStr;
+    });
+    
+    // Filter for check-out bookings: booking.checkOutDate equals today.
+    const checkoutBookings = bookings.filter(booking => {
+      const checkOutDate = parseDate(booking.checkOutDate).toDateString();
+      return checkOutDate === todayStr;
     });
 
-    // Then filter by search term if provided.
-    const filtered = todaysBookings.filter(booking => {
-      const searchLower = searchTerm.toLowerCase();
-      return booking.bookID.toLowerCase().includes(searchLower) ||
-             booking.guestName.toLowerCase().includes(searchLower);
-    });
+    // Apply search filter if provided
+    const searchLower = searchTerm.toLowerCase();
+    const filteredCheckin = checkinBookings.filter(booking =>
+      booking.bookID.toLowerCase().includes(searchLower) ||
+      booking.guestName.toLowerCase().includes(searchLower)
+    );
+    const filteredCheckout = checkoutBookings.filter(booking =>
+      booking.bookID.toLowerCase().includes(searchLower) ||
+      booking.guestName.toLowerCase().includes(searchLower)
+    );
 
-    renderBookings(filtered);
+    renderBookings(filteredCheckin, "checkin");
+    renderBookings(filteredCheckout, "checkout");
 
   } catch (error) {
     console.error("Error loading bookings:", error);
-    bookingsList.innerHTML = "<p>Error loading bookings. Please check console.</p>";
+    document.getElementById("checkinBookingsList").innerHTML = "<p>Error loading bookings. Please check console.</p>";
+    document.getElementById("checkoutBookingsList").innerHTML = "<p>Error loading bookings. Please check console.</p>";
   }
 }
 
-function renderBookings(bookings) {
-  const bookingsList = document.getElementById("bookingsList");
-  bookingsList.innerHTML = "";
+/**
+ * Renders bookings for a given viewType ("checkin" or "checkout").
+ */
+function renderBookings(bookings, viewType) {
+  const container = viewType === "checkin" 
+    ? document.getElementById("checkinBookingsList") 
+    : document.getElementById("checkoutBookingsList");
+  container.innerHTML = "";
 
   if (bookings.length === 0) {
-    bookingsList.innerHTML = "<p>No matching bookings found</p>";
+    container.innerHTML = "<p>No matching bookings found</p>";
     return;
   }
 
@@ -107,23 +142,20 @@ function renderBookings(bookings) {
       <h3>Booking ID: ${booking.bookID}</h3>
       <p>Guest: ${booking.guestName}</p>
       <p>Room: ${booking.roomID}</p>
-      <p>Check-In: ${booking.checkInDate}</p>
-      <p>Check-Out: ${booking.checkOutDate}</p>
-      <button class="checkin-button" onclick="checkInBooking('${booking.id}')">
-        Check In
+      <p>Check-In: ${parseDate(booking.checkInDate).toLocaleString()}</p>
+      <p>Check-Out: ${parseDate(booking.checkOutDate).toLocaleString()}</p>
+      <button class="${viewType}-button" onclick="${viewType}Booking('${booking.id}')">
+        ${viewType === "checkin" ? "Check In" : "Check Out"}
       </button>
     `;
-    bookingsList.appendChild(card);
+    container.appendChild(card);
   });
 }
 
-// Date formatting helper (if needed)
-function formatDate(dateString) {
-  const options = { year: 'numeric', month: 'short', day: 'numeric' };
-  return new Date(dateString).toLocaleDateString('en-US', options);
-}
-
-window.checkInBooking = async function(bookingId) {
+/**
+ * Action for check-in: update booking status to "checkedin" and refresh bookings.
+ */
+window.checkinBooking = async function(bookingId) {
   try {
     await updateDoc(doc(db, "Booking", bookingId), {
       status: "checkedin"
@@ -136,10 +168,53 @@ window.checkInBooking = async function(bookingId) {
   }
 };
 
+/**
+ * Action for check-out: update booking status to "checkedout" and refresh bookings.
+ */
+window.checkoutBooking = async function(bookingId) {
+  try {
+    await updateDoc(doc(db, "Booking", bookingId), {
+      status: "checkedout"
+    });
+    alert("Successfully checked out!");
+    loadBookings(document.getElementById('searchInput').value);
+  } catch (error) {
+    console.error("Check-out failed:", error);
+    alert(`Check-out failed: ${error.message}`);
+  }
+};
+
+// Search function for both views.
 window.searchBookings = function() {
   const searchTerm = document.getElementById('searchInput').value;
   loadBookings(searchTerm);
 };
 
-// Initial load
+/**
+ * Toggle between Check-In and Check-Out views and refresh the data.
+ */
+window.showView = function(view) {
+  const checkinSection = document.getElementById("checkinSection");
+  const checkoutSection = document.getElementById("checkoutSection");
+  const checkinNav = document.getElementById("checkinNav");
+  const checkoutNav = document.getElementById("checkoutNav");
+  
+  if (view === "checkin") {
+    checkinSection.style.display = "block";
+    checkoutSection.style.display = "none";
+    checkinNav.classList.add("active");
+    checkoutNav.classList.remove("active");
+  } else {
+    checkinSection.style.display = "none";
+    checkoutSection.style.display = "block";
+    checkoutNav.classList.add("active");
+    checkinNav.classList.remove("active");
+  }
+  
+  // Reload bookings when switching views.
+  loadBookings(document.getElementById('searchInput').value);
+};
+
+// Initial load: show check-in view by default.
+showView("checkin");
 loadBookings();
