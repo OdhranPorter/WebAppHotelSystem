@@ -90,6 +90,7 @@ p {
   border: 1px solid #ccc;
   border-radius: 5px;
   text-align: center;
+  margin-bottom: 10px;
 }
 
 /* Confirm Booking Button */
@@ -207,4 +208,12 @@ footer {
   float: right;
   font-size: 1.2rem;
   font-weight: bold;
+}
+
+footer {
+  margin-top: 2rem;
+  background-color: #333;
+  color: #fff;
+  text-align: center;
+  padding: 1rem;
 }
