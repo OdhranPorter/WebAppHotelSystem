@@ -69,8 +69,15 @@ async function loadBookings(searchTerm = '') {
       });
     }
 
-    // Filter bookings based on search term
-    const filtered = bookings.filter(booking => {
+    // Filter bookings for the current date only.
+    const today = new Date().toDateString();
+    const todaysBookings = bookings.filter(booking => {
+      // Convert booking.checkInDate to a Date object and then to a string.
+      return new Date(booking.checkInDate).toDateString() === today;
+    });
+
+    // Then filter by search term if provided.
+    const filtered = todaysBookings.filter(booking => {
       const searchLower = searchTerm.toLowerCase();
       return booking.bookID.toLowerCase().includes(searchLower) ||
              booking.guestName.toLowerCase().includes(searchLower);
@@ -110,9 +117,7 @@ function renderBookings(bookings) {
   });
 }
 
-// Keep other functions the same
-
-// Date formatting helper
+// Date formatting helper (if needed)
 function formatDate(dateString) {
   const options = { year: 'numeric', month: 'short', day: 'numeric' };
   return new Date(dateString).toLocaleDateString('en-US', options);
