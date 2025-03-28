@@ -89,7 +89,7 @@ if (logoutBtn) {
   });
 }
 
-// Modal handling for room type edit modal and extra edit modal
+// Modal handling for room type and extra modals
 closeSpan.onclick = () => editTypeModal.style.display = "none";
 closeEditExtraModal.onclick = () => editExtraModal.style.display = "none";
 window.onclick = (event) => {
@@ -402,7 +402,7 @@ async function loadAllBookings() {
 }
 
 // ==============================
-// Extras Functions
+// Extras Functions (Single List)
 // ==============================
 
 async function loadExtras() {
@@ -413,38 +413,31 @@ async function loadExtras() {
     const extra = docSnap.data();
     const extraId = docSnap.id;
     
-    const extraCard = document.createElement("div");
-    extraCard.className = "room-type-card";
-    extraCard.innerHTML = `
+    // Each extra is shown as a row in a single container
+    const extraItem = document.createElement("div");
+    extraItem.className = "room-type-card";
+    extraItem.innerHTML = `
       <div class="room-type-header">
-        <h3>${extraId} Extras (€${extra.price})</h3>
+        <h3>${extraId} - ${extra.name} (€${extra.price})</h3>
         <div>
-          <button class="edit-extra-btn" data-id="${extraId}">Edit Extra</button>
-          <button class="delete-extra-btn" data-id="${extraId}">Delete Extra</button>
-        </div>
-      </div>
-      <div class="rooms-list">
-        <div class="room-item">
-          <div class="room-details">
-            <div class="room-id"><strong>Name:</strong> ${extra.name}</div>
-            <div class="room-status">Price: €${extra.price}</div>
-          </div>
+          <button class="edit-extra-btn" data-id="${extraId}">Edit</button>
+          <button class="delete-extra-btn" data-id="${extraId}">Delete</button>
         </div>
       </div>
     `;
 
-    extraCard.querySelector('.edit-extra-btn').addEventListener('click', () => {
+    extraItem.querySelector('.edit-extra-btn').addEventListener('click', () => {
       showEditExtraModal(extraId, extra);
     });
 
-    extraCard.querySelector('.delete-extra-btn').addEventListener('click', async () => {
+    extraItem.querySelector('.delete-extra-btn').addEventListener('click', async () => {
       if (confirm(`Delete extra ${extraId}?`)) {
         await deleteDoc(doc(db, "Extras", extraId));
         loadExtras();
       }
     });
 
-    extrasList.appendChild(extraCard);
+    extrasList.appendChild(extraItem);
   });
 }
 
