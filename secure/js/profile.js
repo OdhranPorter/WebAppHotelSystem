@@ -33,7 +33,7 @@ const db = getFirestore(app);
 
 let currentAction = null;
 let currentPaymentBooking = null;
-let currentExtrasBooking = null; // Global variable for extras
+let currentExtrasBooking = null;
 
 // Modal handling
 const modals = document.querySelectorAll('.modal');
@@ -82,7 +82,7 @@ onAuthStateChanged(auth, async (user) => {
             return;
         }
 
-        // Sort bookings: order by check-in date
+        // Sort bookings
         const bookingsDocs = bookingsSnapshot.docs.map(d => ({ id: d.id, ...d.data() }));
         bookingsDocs.sort((a, b) => new Date(a.checkInDate) - new Date(b.checkInDate));
 
@@ -112,21 +112,16 @@ onAuthStateChanged(auth, async (user) => {
 });
 
 function createBookingCard(booking, roomType, typeData, bookingId) {
-    // Convert status to lowercase for consistency
     const status = booking.status.toLowerCase();
-    
-    // Start with the Cancel Booking button
     let buttons = `<button class="cancel-btn" onclick="cancelBooking('${bookingId}', '${status}')">
                         Cancel Booking
                    </button>`;
 
-    // If status is pending, show the "Pay Now" button.
     if (status === 'pending') {
         buttons += `<button class="pay-btn" onclick="showPaymentModal('${bookingId}', ${typeData.price}, ${calculateNights(booking)})">
                         Pay Now (€${typeData.price * calculateNights(booking)})
                     </button>`;
     }
-    // Only show the Edit Extras button if the room is "checkedin"
     else if (status === 'checkedin') {
         buttons += `<button class="edit-extras-btn" onclick="showExtrasModal('${bookingId}')">
                         Edit Extras
@@ -157,9 +152,6 @@ function createBookingCard(booking, roomType, typeData, bookingId) {
     return card;
 }
 
-
-
-
 function calculateNights(booking) {
     const checkIn = new Date(booking.checkInDate);
     const checkOut = new Date(booking.checkOutDate);
@@ -189,98 +181,109 @@ function getAmenityIcon(amenity) {
     return icons[name] || 'images/icon_amenity.png';
 }
 
-// ---------------- Extras Modal Functions ----------------
-
-// Now extras can be edited only when the booking is "checked in" – so showExtrasModal is called only for those bookings.
-window.showExtrasModal = function(bookingId) {
+// ----------------- Extras Functions -----------------
+window.showExtrasModal = async function(bookingId) {
     currentExtrasBooking = { 
         id: bookingId, 
         extrasCost: 0, 
         extras: []
     };
-    // Reset the form and total cost display
-    document.getElementById('extrasForm').reset();
-    document.getElementById('extrasTotal').textContent = "0.00";
-    extrasModal.style.display = 'block';
 
-    // Attach change listeners to update total automatically
-    const checkboxes = document.querySelectorAll('#extrasForm input[name="extras"]');
-    checkboxes.forEach(checkbox => {
-        checkbox.addEventListener('change', window.calculateExtras);
-    });
+    const extrasForm = document.getElementById('extrasForm');
+    extrasForm.innerHTML = '<h3>Select Extras</h3>';
 
-    // Fetch current extras from Firebase and pre-populate the checkboxes
-    getDoc(doc(db, "Booking", bookingId))
-        .then((docSnap) => {
-            if (docSnap.exists()) {
-                let bookingData = docSnap.data();
-                if (bookingData.extras && Array.isArray(bookingData.extras)) {
-                    checkboxes.forEach(checkbox => {
-                        checkbox.checked = bookingData.extras.includes(checkbox.value);
-                    });
-                    window.calculateExtras();
-                }
-            }
-        })
-        .catch((error) => {
-            console.error("Error fetching extras data:", error);
+    try {
+        // Get available extras from Firebase
+        const extrasSnapshot = await getDocs(collection(db, "Extras"));
+        const bookingDoc = await getDoc(doc(db, "Booking", bookingId));
+        
+        if (!bookingDoc.exists()) return;
+        const currentExtras = bookingDoc.data().extras || [];
+
+        // Create checkbox for each extra
+        extrasSnapshot.forEach((doc) => {
+            const extra = doc.data();
+            const div = document.createElement('div');
+            div.innerHTML = `
+                <input type="checkbox" 
+                       id="extra_${doc.id}" 
+                       name="extras" 
+                       value="${extra.name}" 
+                       data-price="${extra.price}"
+                       ${currentExtras.includes(extra.name) ? 'checked' : ''}
+                       ${currentExtras.includes(extra.name) ? 'disabled' : ''}>
+                <label for="extra_${doc.id}">${extra.name} (€${extra.price})</label>
+            `;
+            extrasForm.appendChild(div);
         });
+
+        // Add total display and button
+        const totalDiv = document.createElement('div');
+        totalDiv.innerHTML = `
+            <p>Total Extras Cost: €<span id="extrasTotal">0.00</span></p>
+            <button type="button" onclick="saveExtras()">Save Extras</button>
+        `;
+        extrasForm.appendChild(totalDiv);
+
+        // Calculate initial total
+        window.calculateExtras();
+        extrasModal.style.display = 'block';
+
+        // Add event listeners
+        const checkboxes = extrasForm.querySelectorAll('input[name="extras"]');
+        checkboxes.forEach(checkbox => {
+            checkbox.addEventListener('change', window.calculateExtras);
+        });
+
+    } catch (error) {
+        console.error("Error loading extras:", error);
+        alert('Error loading extras options');
+    }
 };
 
-// Automatically calculate extras total when checkboxes change
 window.calculateExtras = function() {
-    const extrasForm = document.getElementById('extrasForm');
-    const checkboxes = extrasForm.querySelectorAll('input[name="extras"]');
+    const checkboxes = document.querySelectorAll('#extrasForm input[name="extras"]:not(:disabled)');
     let total = 0;
     let selectedExtras = [];
+    
     checkboxes.forEach(checkbox => {
         if (checkbox.checked) {
-            const price = parseFloat(checkbox.getAttribute('data-price'));
+            const price = parseFloat(checkbox.dataset.price);
             total += price;
             selectedExtras.push(checkbox.value);
         }
     });
+    
     currentExtrasBooking.extrasCost = total;
     currentExtrasBooking.extras = selectedExtras;
     document.getElementById('extrasTotal').textContent = total.toFixed(2);
 };
 
-// In the saveExtras function - remove the payment handling
 window.saveExtras = async function() {
-    window.calculateExtras();
-
-    if (currentExtrasBooking.extrasCost === 0) {
-        alert("Please select at least one extra before proceeding.");
-        return;
-    }
-
     try {
+        // Get existing extras to preserve disabled ones
+        const bookingDoc = await getDoc(doc(db, "Booking", currentExtrasBooking.id));
+        const existingExtras = bookingDoc.data().extras || [];
+        
+        // Merge new selections with existing extras
+        const allExtras = [...existingExtras, ...currentExtrasBooking.extras];
+        
         await updateDoc(doc(db, "Booking", currentExtrasBooking.id), {
-            extras: currentExtrasBooking.extras,
-            extrasCost: currentExtrasBooking.extrasCost,
-            extrasPaid: true // Mark as paid automatically since we're removing payment
+            extras: allExtras,
+            extrasCost: currentExtrasBooking.extrasCost
         });
+        
         alert("Extras updated successfully!");
         extrasModal.style.display = 'none';
-        location.reload(); // Refresh to show updated extras
-
+        location.reload();
     } catch (error) {
         console.error("Failed to update extras:", error);
         alert("Error updating extras: " + error.message);
     }
 };
 
-// Remove the payment modal trigger from the createBookingCard function
-if (status === 'checkedin') {
-    buttons += `<button class="edit-extras-btn" onclick="showExtrasModal('${bookingId}')">
-                    Edit Extras
-                </button>`;
-}
-
-// ---------------- Payment Handling ----------------
-
+// ----------------- Remaining Functions -----------------
 window.showPaymentModal = function(bookingId, price, nights) {
-    // For room payments (before check in), update status to "booked" upon payment.
     currentPaymentBooking = {
         id: bookingId,
         amount: price * nights
@@ -328,19 +331,10 @@ window.submitPayment = async function() {
             throw new Error('Payment declined: Insufficient funds');
         }
 
-        if (currentPaymentBooking.extras) {
-            // For extras payment after check in, mark extras as paid.
-            await updateDoc(doc(db, "Booking", currentPaymentBooking.id), {
-                extrasPaid: true
-            });
-            alert('✅ Extras payment successful!\nExtras added to your booking.');
-        } else {
-            // For room payment, update status to "booked"
-            await updateDoc(doc(db, "Booking", currentPaymentBooking.id), {
-                status: 'booked'
-            });
-            alert('✅ Payment successful!\nBooking confirmed as "booked".');
-        }
+        await updateDoc(doc(db, "Booking", currentPaymentBooking.id), {
+            status: 'booked'
+        });
+        alert('✅ Payment successful!\nBooking confirmed as "booked".');
         location.reload();
     } catch (error) {
         alert(`❌ Payment failed: ${error.message}`);
@@ -351,8 +345,6 @@ window.submitPayment = async function() {
         paymentModal.style.display = 'none';
     }
 };
-
-// ---------------- Booking Cancellation ----------------
 
 window.cancelBooking = async (bookingId, status) => {
     const message = status === 'booked' ? 
@@ -370,8 +362,6 @@ window.cancelBooking = async (bookingId, status) => {
         }
     }
 };
-
-// ---------------- Password and Profile Management ----------------
 
 window.togglePassword = async () => {
     currentAction = 'showPassword';
