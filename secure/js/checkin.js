@@ -48,77 +48,92 @@ async function loadBookings(searchTerm = '') {
   checkoutList.innerHTML = "<p>Loading check-out bookings...</p>";
   
   try {
-    const q = query(
+    // Fetch check-in bookings (status: booked)
+    const checkinQuery = query(
       collection(db, "Booking"),
       where("status", "==", "booked")
     );
-    const querySnapshot = await getDocs(q);
-    const bookings = [];
+    const checkinSnapshot = await getDocs(checkinQuery);
+    const checkinBookings = [];
+    for (const docSnap of checkinSnapshot.docs) {
+      const booking = await processBookingDoc(docSnap);
+      checkinBookings.push(booking);
+    }
 
-    for (const docSnap of querySnapshot.docs) {
-      const booking = docSnap.data();
-      let guestName = 'Unknown';
-      let debugInfo = '';
-
-      try {
-        const guestRef = doc(db, "Guest", booking.guestID);
-        const guestSnap = await getDoc(guestRef);
-        if (guestSnap.exists()) {
-          const guestData = guestSnap.data();
-          if (guestData.fName && guestData.sName) {
-            guestName = `${guestData.fName} ${guestData.sName}`;
-          } else {
-            debugInfo = ' (Missing name fields)';
-          }
-        } else {
-          debugInfo = ' (Guest not found)';
-        }
-      } catch (error) {
-        console.error(`Error fetching guest ${booking.guestID}:`, error);
-        debugInfo = ' (Error loading guest)';
-      }
-
-      bookings.push({
-        id: docSnap.id,
-        ...booking,
-        guestName: guestName + debugInfo
-      });
+    // Fetch checkout bookings (status: checkedin)
+    const checkoutQuery = query(
+      collection(db, "Booking"),
+      where("status", "==", "checkedin")
+    );
+    const checkoutSnapshot = await getDocs(checkoutQuery);
+    const checkoutBookings = [];
+    for (const docSnap of checkoutSnapshot.docs) {
+      const booking = await processBookingDoc(docSnap);
+      checkoutBookings.push(booking);
     }
 
     // Get today's date string for comparison
     const todayStr = new Date().toDateString();
     
-    // Filter for check-in bookings: booking.checkInDate equals today.
-    const checkinBookings = bookings.filter(booking => {
+    // Filter check-in bookings: checkInDate is today
+    const filteredCheckin = checkinBookings.filter(booking => {
       const checkInDate = parseDate(booking.checkInDate).toDateString();
       return checkInDate === todayStr;
     });
     
-    // Filter for check-out bookings: booking.checkOutDate equals today.
-    const checkoutBookings = bookings.filter(booking => {
+    // Filter checkout bookings: checkOutDate is today
+    const filteredCheckout = checkoutBookings.filter(booking => {
       const checkOutDate = parseDate(booking.checkOutDate).toDateString();
       return checkOutDate === todayStr;
     });
 
     // Apply search filter if provided
     const searchLower = searchTerm.toLowerCase();
-    const filteredCheckin = checkinBookings.filter(booking =>
+    const finalCheckin = filteredCheckin.filter(booking =>
       booking.bookID.toLowerCase().includes(searchLower) ||
       booking.guestName.toLowerCase().includes(searchLower)
     );
-    const filteredCheckout = checkoutBookings.filter(booking =>
+    const finalCheckout = filteredCheckout.filter(booking =>
       booking.bookID.toLowerCase().includes(searchLower) ||
       booking.guestName.toLowerCase().includes(searchLower)
     );
 
-    renderBookings(filteredCheckin, "checkin");
-    renderBookings(filteredCheckout, "checkout");
+    renderBookings(finalCheckin, "checkin");
+    renderBookings(finalCheckout, "checkout");
 
   } catch (error) {
     console.error("Error loading bookings:", error);
-    document.getElementById("checkinBookingsList").innerHTML = "<p>Error loading bookings. Please check console.</p>";
-    document.getElementById("checkoutBookingsList").innerHTML = "<p>Error loading bookings. Please check console.</p>";
+    checkinList.innerHTML = "<p>Error loading bookings. Please check console.</p>";
+    checkoutList.innerHTML = "<p>Error loading bookings. Please check console.</p>";
   }
+}
+
+// Add this helper function to process booking documents
+async function processBookingDoc(docSnap) {
+  const booking = docSnap.data();
+  let guestName = 'Unknown';
+  let debugInfo = '';
+
+  try {
+    const guestRef = doc(db, "Guest", booking.guestID);
+    const guestSnap = await getDoc(guestRef);
+    if (guestSnap.exists()) {
+      const guestData = guestSnap.data();
+      guestName = `${guestData.fName || ''} ${guestData.sName || ''}`.trim();
+      if (!guestName) debugInfo = ' (Missing name fields)';
+    } else {
+      debugInfo = ' (Guest not found)';
+    }
+  } catch (error) {
+    console.error(`Error fetching guest ${booking.guestID}:`, error);
+    debugInfo = ' (Error loading guest)';
+  }
+
+  return {
+    id: docSnap.id,
+    ...booking,
+    guestName: guestName + debugInfo
+  };
 }
 
 /**
