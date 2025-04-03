@@ -17,24 +17,44 @@ body {
   display: flex;
   flex-direction: column;
   align-items: center;
+  margin-top:50px;
   min-height: 100vh;
 }
 
-/* Fixed Header */
+/* Navigation styling */
 header {
   background-color: #333;
   color: #fff;
-  width: 100%;
-  padding: 1rem;
+  padding: 1rem 2rem; /* More padding for better spacing */
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%; /* Ensures header covers entire width */
   position: fixed;
   top: 0;
   left: 0;
   z-index: 1000;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
   box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+  margin-bottom: 100px;
 }
+header .logo {
+  display: flex;
+  align-items: center;
+}
+header .logo img {
+  height: 50px;
+  margin-right: 10px;
+}
+header nav a {
+  color: #fff;
+  text-decoration: none;
+  margin-left: 20px;
+
+}
+header nav a:hover {
+  text-decoration: underline;
+}
+
 
 /* Navigation Styling */
 header nav {
@@ -90,6 +110,7 @@ p {
   border: 1px solid #ccc;
   border-radius: 5px;
   text-align: center;
+  margin-bottom: 10px;
 }
 
 /* Confirm Booking Button */
@@ -207,4 +228,28 @@ footer {
   float: right;
   font-size: 1.2rem;
   font-weight: bold;
+}
+
+footer {
+  margin-top: 2rem;
+  background-color: #333;
+  color: #fff;
+  text-align: center;
+  padding: 1rem;
+}
+/* Fix purple links */
+a{
+  color: white; /* Sets the default color */
+  text-decoration: none;
+  font-size: 18px;
+}
+
+/* Prevents links from turning purple */
+a:visited {
+  color: white;
+}
+
+/* Hover effect */
+a:hover {
+  color: #e6b800;
 }
