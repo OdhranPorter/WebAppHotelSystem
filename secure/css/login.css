@@ -116,6 +116,7 @@ footer {
   bottom: 0;
   left: 0;
   font-size: 14px;
+  margin-top: auto;
 }
 /* Fix purple links */
 a{
