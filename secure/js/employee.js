@@ -72,6 +72,7 @@ onAuthStateChanged(auth, async (user) => {
   loadAllBookings();
   loadAmenities();
   loadExtras();
+  loadMaintenanceRooms();
 });
 
 // Toggle account menu
@@ -95,6 +96,52 @@ closeEditExtraModal.onclick = () => editExtraModal.style.display = "none";
 window.onclick = (event) => {
   if (event.target == editTypeModal) editTypeModal.style.display = "none";
   if (event.target == editExtraModal) editExtraModal.style.display = "none";
+};
+
+// ======================
+// Maintenance Functions
+// ======================
+async function loadMaintenanceRooms() {
+  const maintenanceRooms = document.getElementById("maintenanceRooms");
+  maintenanceRooms.innerHTML = "<p>Loading rooms...</p>";
+  
+  try {
+    const roomsSnapshot = await getDocs(collection(db, "Room"));
+    maintenanceRooms.innerHTML = "";
+
+    roomsSnapshot.forEach(docSnap => {
+      const room = docSnap.data();
+      const roomItem = document.createElement("div");
+      roomItem.className = "room-item";
+      roomItem.innerHTML = `
+        <div class="room-details">
+          <div class="room-id">${room.id}</div>
+          <div class="room-amenities">Type: ${room.type}</div>
+          <div class="room-status ${room.status}">
+            ${room.status}
+          </div>
+        </div>
+        <button class="action-btn maintenance" 
+                onclick="toggleRoomStatus('${room.id}', '${room.status}')">
+          ${room.status === 'unavailable' ? 'Recommission' : 'Decommission'}
+        </button>
+      `;
+      maintenanceRooms.appendChild(roomItem);
+    });
+  } catch (error) {
+    maintenanceRooms.innerHTML = "<p>Error loading rooms</p>";
+  }
+}
+
+window.toggleRoomStatus = async (roomId, currentStatus) => {
+  const newStatus = currentStatus === 'unavailable' ? 'available' : 'unavailable';
+  try {
+    await updateDoc(doc(db, "Room", roomId), { status: newStatus });
+    loadMaintenanceRooms();
+    loadRoomTypesWithRooms();
+  } catch (error) {
+    alert("Error updating room status");
+  }
 };
 
 // ==============================

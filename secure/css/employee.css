@@ -378,3 +378,17 @@ table tbody td {
   border-radius: 4px;
   border: 1px solid #ddd;
 }
+
+/* Add to room-status classes */
+.room-status.unavailable {
+  background-color: #d9d9d9;
+  color: #666;
+}
+
+/* Add maintenance button styles */
+.action-btn.maintenance {
+  background-color: #ff9800;
+  padding: 0.4rem 0.8rem;
+  border-radius: 4px;
+  font-size: 0.85rem;
+}
