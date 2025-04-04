@@ -112,9 +112,150 @@ onAuthStateChanged(auth, async (user) => {
   }
 });
 
+
+// Add these card type detection functions
+function detectCardType(number) {
+  const cleaned = number.replace(/\s/g, '');
+  const patterns = {
+    visa: /^4/,
+    mastercard: /^5[1-5]/,
+    amex: /^3[47]/,
+    discover: /^6(?:011|5)/,
+  };
+  
+  for (const [type, pattern] of Object.entries(patterns)) {
+    if (pattern.test(cleaned)) return type;
+  }
+  return 'unknown';
+}
+
+function updateCardTypeIcon(number) {
+  const type = detectCardType(number);
+  const icon = document.getElementById('cardTypeIcon');
+  icon.style.backgroundImage = `url(images/${type}.png)`;
+  icon.style.display = type === 'unknown' ? 'none' : 'block';
+  
+  // Update CVV max length for Amex
+  const cvvField = document.getElementById('cvv');
+  cvvField.maxLength = type === 'amex' ? 4 : 3;
+}
+
+// Add input formatting handlers
+document.getElementById('cardNumber')?.addEventListener('input', function(e) {
+  let value = e.target.value.replace(/\s/g, '');
+  if (isNaN(value)) return;
+  
+  // Format with spaces every 4 digits
+  value = value.match(/.{1,4}/g)?.join(' ').substr(0, 19) || '';
+  e.target.value = value;
+  updateCardTypeIcon(value);
+});
+
+document.getElementById('expiryDate')?.addEventListener('input', function(e) {
+  let value = e.target.value.replace(/[^0-9]/g, '');
+  if (value.length >= 2) {
+    value = value.slice(0, 2) + '/' + value.slice(2, 4);
+  }
+  e.target.value = value.substring(0, 5);
+});
+
+// Enhanced validation function
+function validatePaymentDetails() {
+  let isValid = true;
+  const errors = {
+    nameError: '',
+    numberError: '',
+    expiryError: '',
+    cvvError: ''
+  };
+
+  // Cardholder Name validation
+  const cardHolderName = document.getElementById('cardHolderName').value.trim();
+  if (!cardHolderName || !/^[a-zA-Z ]+$/.test(cardHolderName)) {
+    errors.nameError = 'Please enter a valid name';
+    isValid = false;
+  }
+
+  // Card Number validation
+  const cardNumber = document.getElementById('cardNumber').value.replace(/\s/g, '');
+  if (!/^\d{16}$/.test(cardNumber)) {
+    errors.numberError = 'Invalid card number';
+    isValid = false;
+  }
+
+  // Expiry Date validation
+  const expiryDate = document.getElementById('expiryDate').value;
+  const [month, year] = expiryDate.split('/');
+  if (!/^(0[1-9]|1[0-2])\/\d{2}$/.test(expiryDate)) {
+    errors.expiryError = 'Invalid expiry date';
+    isValid = false;
+  } else {
+    const currentYear = new Date().getFullYear() % 100;
+    const currentMonth = new Date().getMonth() + 1;
+    if (parseInt(year) < currentYear || 
+       (parseInt(year) === currentYear && parseInt(month) < currentMonth)) {
+      errors.expiryError = 'Card has expired';
+      isValid = false;
+    }
+  }
+
+  // CVV validation
+  const cvv = document.getElementById('cvv').value;
+  const cardType = detectCardType(cardNumber);
+  const cvvValidLength = cardType === 'amex' ? 4 : 3;
+  if (!/^\d+$/.test(cvv) || cvv.length !== cvvValidLength) {
+    errors.cvvError = `CVV must be ${cvvValidLength} digits`;
+    isValid = false;
+  }
+
+  // Display errors
+  Object.entries(errors).forEach(([id, message]) => {
+    const errorElement = document.getElementById(id);
+    errorElement.textContent = message;
+    errorElement.style.display = message ? 'block' : 'none';
+  });
+
+  return isValid;
+}
+
+// Update payment handler
+submitBankDetailsBtn?.addEventListener("click", async (e) => {
+  e.preventDefault();
+  
+  if (!validatePaymentDetails()) return;
+
+  const paymentData = {
+    cardHolderName: document.getElementById("cardHolderName").value.trim(),
+    cardNumber: document.getElementById("cardNumber").value.replace(/\s/g, ''),
+    expiryDate: document.getElementById("expiryDate").value,
+    cvv: document.getElementById("cvv").value
+  };
+
+  try {
+    await setDoc(doc(db, "Payments", currentBookingId), {
+      bookingID: currentBookingId,
+      guestID: auth.currentUser.uid,
+      ...paymentData,
+      timestamp: new Date()
+    });
+    
+    alert("Payment successful!");
+    bankDetailsModal.style.display = "none";
+    window.location.href = "profile";
+  } catch (error) {
+    console.error("Payment failed:", error);
+    alert("Payment failed: " + error.message);
+  }
+});
+
 async function getFullyBookedDates(roomType) {
   const fullyBookedDates = [];
-  const roomsQuery = query(collection(db, "Room"), where("type", "==", roomType));
+  // Filter for available rooms only
+  const roomsQuery = query(
+    collection(db, "Room"),
+    where("type", "==", roomType),
+    where("status", "==", "available")
+  );
   const roomsSnapshot = await getDocs(roomsQuery);
   const roomIds = roomsSnapshot.docs.map(doc => doc.id);
   const bookedDatesMap = new Map();
@@ -151,6 +292,7 @@ async function getFullyBookedDates(roomType) {
   }
   return fullyBookedDates;
 }
+
 
 async function findAvailableRoom(roomType, selectedDates) {
   const [startDate, endDate] = selectedDates;

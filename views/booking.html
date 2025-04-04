@@ -61,14 +61,41 @@
 <div id="bankDetailsModal" class="modal" style="display: none;">
   <div class="modal-content" style="max-width: 400px; margin: auto; padding: 1rem;">
     <span class="close" style="cursor: pointer; float: right; font-size: 1.2rem;">&times;</span>
-    <h3>Enter Bank Details</h3>
-    <input type="text" id="cardHolderName" placeholder="Cardholder Name" required style="width: 100%; margin: 0.5rem 0; padding: 8px;">
-    <input type="text" id="cardNumber" placeholder="Card Number" required style="width: 100%; margin: 0.5rem 0; padding: 8px;">
-    <input type="text" id="expiryDate" placeholder="Expiry Date (MM/YY)" required style="width: 100%; margin: 0.5rem 0; padding: 8px;">
-    <input type="text" id="cvv" placeholder="CVV" required style="width: 100%; margin: 0.5rem 0; padding: 8px;">
-    <button id="submitBankDetailsBtn" style="background-color: #3498db; color: white; padding: 0.8rem 1.5rem; border: none; border-radius: 5px; cursor: pointer;">Submit Payment Details</button>
+    <h3>Enter Payment Details</h3>
+    
+    <div class="form-group">
+      <label for="cardHolderName">Cardholder Name</label>
+      <input type="text" id="cardHolderName" placeholder="John Doe" required>
+      <span class="error-message" id="nameError"></span>
+    </div>
+
+    <div class="form-group">
+      <label for="cardNumber">Card Number</label>
+      <div class="input-with-icon">
+        <input type="text" id="cardNumber" placeholder="4242 4242 4242 4242" maxlength="19" required>
+        <span id="cardTypeIcon"></span>
+      </div>
+      <span class="error-message" id="numberError"></span>
+    </div>
+
+    <div class="form-row">
+      <div class="form-group">
+        <label for="expiryDate">Expiry Date</label>
+        <input type="text" id="expiryDate" placeholder="MM/YY" maxlength="5" required>
+        <span class="error-message" id="expiryError"></span>
+      </div>
+      
+      <div class="form-group">
+        <label for="cvv">CVV</label>
+        <input type="password" id="cvv" placeholder="123" maxlength="4" required>
+        <span class="error-message" id="cvvError"></span>
+      </div>
+    </div>
+
+    <button id="submitBankDetailsBtn">Submit Payment</button>
   </div>
 </div>
+
 
   <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
   <script type="module" src="js/booking.js"></script>
