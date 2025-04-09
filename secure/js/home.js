@@ -1,6 +1,19 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.3.0/firebase-app.js";
-import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/11.3.0/firebase-auth.js";
-import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/11.3.0/firebase-firestore.js";
+import {
+  getAuth,
+  onAuthStateChanged,
+  signOut
+} from "https://www.gstatic.com/firebasejs/11.3.0/firebase-auth.js";
+import {
+  getFirestore,
+  doc,
+  getDoc,
+  getDocs,
+  collection,
+  query,
+  where,
+  deleteDoc
+} from "https://www.gstatic.com/firebasejs/11.3.0/firebase-firestore.js";
 
 // Your Firebase config
 const firebaseConfig = {
@@ -19,6 +32,31 @@ const db = getFirestore(app);
 
 document.addEventListener("DOMContentLoaded", () => {
   console.log("home.js loaded");
+
+  // ------------------------------
+  // Delete expired bookings first
+  // ------------------------------
+  async function deleteExpiredBookings() {
+    const today = new Date().toISOString().split("T")[0]; // YYYY-MM-DD
+
+    const expiredQuery = query(
+      collection(db, "Booking"),
+      where("checkOutDate", "<", today)
+    );
+
+    try {
+      const querySnapshot = await getDocs(expiredQuery);
+      querySnapshot.forEach(async (bookingDoc) => {
+        await deleteDoc(bookingDoc.ref);
+        console.log(`Deleted expired booking: ${bookingDoc.id}`);
+      });
+    } catch (error) {
+      console.error("Error deleting expired bookings:", error);
+    }
+  }
+
+  // Run cleanup as soon as homepage loads
+  deleteExpiredBookings();
 
   // -----------------------
   // 1) Handle Auth UI Logic
@@ -58,11 +96,7 @@ document.addEventListener("DOMContentLoaded", () => {
   // Book Now logic
   if (bookBtn) {
     bookBtn.addEventListener("click", () => {
-      if (auth.currentUser) {
-        window.location.href = "rooms";
-      } else {
-        window.location.href = "login?from=rooms";
-      }
+      window.location.href = "rooms";
     });
   }
 
@@ -77,7 +111,7 @@ document.addEventListener("DOMContentLoaded", () => {
   onAuthStateChanged(auth, async (user) => {
     if (user) {
       console.log("User logged in:", user.uid);
-      if (loginBtnNav)     loginBtnNav.style.display = "none"; 
+      if (loginBtnNav)     loginBtnNav.style.display = "none";
       if (accountDropdown) accountDropdown.style.display = "inline-block";
       if (heroLoginBtn)    heroLoginBtn.style.display = "none";
 
@@ -87,7 +121,6 @@ document.addEventListener("DOMContentLoaded", () => {
       if (adminPageLink)   adminPageLink.style.display = "none";
       if (indexPageLink)   indexPageLink.style.display = "none";
 
-      // Change the collection name if needed. In this example, we use "Employee"
       const collectionName = "Employee";
 
       try {
@@ -98,11 +131,9 @@ document.addEventListener("DOMContentLoaded", () => {
           console.log("Fetched user data:", userData);
           const role = userData.role ? userData.role.toLowerCase() : "";
           if (role === "employee") {
-            // Show only employee links for employee role
             if (checkinLink)     checkinLink.style.display = "inline-block";
             if (employeeHubLink) employeeHubLink.style.display = "inline-block";
           } else if (role === "admin") {
-            // Show employee links plus admin links for admin role
             if (checkinLink)     checkinLink.style.display = "inline-block";
             if (employeeHubLink) employeeHubLink.style.display = "inline-block";
             if (adminPageLink)   adminPageLink.style.display = "inline-block";
@@ -117,7 +148,6 @@ document.addEventListener("DOMContentLoaded", () => {
         console.error("Error fetching user role:", error);
       }
     } else {
-      // If not logged in, show login UI and keep employee/admin links hidden
       if (loginBtnNav)     loginBtnNav.style.display = "inline-block";
       if (accountDropdown) accountDropdown.style.display = "none";
       if (heroLoginBtn)    heroLoginBtn.style.display = "inline-block";

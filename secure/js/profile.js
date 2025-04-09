@@ -30,59 +30,66 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
+const amenityImages = {}; // Global cache
 
-let currentAction = null;
-let currentPaymentBooking = null;
-let currentExtrasBooking = null;
-
-// Modal handling
-const modals = document.querySelectorAll('.modal');
-const codeModal = document.getElementById('codeModal');
-const passwordModal = document.getElementById('passwordModal');
-const paymentModal = document.getElementById('paymentModal');
-const extrasModal = document.getElementById('extrasModal');
-
-document.querySelectorAll('.close').forEach(closeBtn => {
-    closeBtn.onclick = () => {
-        modals.forEach(m => m.style.display = 'none');
-    };
-});
-
-window.onclick = (event) => {
-    if (event.target.classList.contains('modal')) {
-        modals.forEach(m => m.style.display = 'none');
+// Updated: When loading amenity icons, check if data.image already starts with "data:".
+// Also, keys are stored in lower-case.
+async function loadAmenityIcons() {
+    try {
+        const snapshot = await getDocs(collection(db, "Amenity"));
+        console.log(`Loading ${snapshot.size} amenity icons...`);
+        snapshot.forEach(doc => {
+            const data = doc.data();
+            const mimeType = data.mime || "image/png";
+            if (data.image) {
+                const imageUrl = data.image.startsWith("data:")
+                    ? data.image
+                    : `data:${mimeType};base64,${data.image}`;
+                amenityImages[doc.id.toLowerCase()] = imageUrl;
+                console.log(`✔️ Loaded icon for amenity: ${doc.id}`);
+            } else {
+                console.warn(`⚠️ Amenity '${doc.id}' is missing 'image' field.`);
+            }
+        });
+    } catch (error) {
+        console.error("❌ Failed to load amenity icons:", error);
     }
-};
+}
 
-// Profile data loading
+// Updated: Look up amenity icons using lower-case keys and use an absolute fallback URL.
+function getAmenityIcon(amenity) {
+    const key = amenity.toLowerCase();
+    if (amenityImages[key]) {
+        return amenityImages[key];
+    } else {
+        console.warn(`🚫 No icon found for amenity: '${amenity}'`);
+        return "/images/icon_amenity.png";
+    }
+}
+
 onAuthStateChanged(auth, async (user) => {
-    if (!user) {
-        window.location.href = 'login.html';
-        return;
-    }
+    if (!user) return (window.location.href = "login.html");
+    await loadAmenityIcons();
 
     try {
         const userDoc = await getDoc(doc(db, "Guest", user.uid));
         if (!userDoc.exists()) return;
 
         const userData = userDoc.data();
-        document.getElementById('displayName').textContent =
-            `${userData.fName} ${userData.sName}`;
-        document.getElementById('displayEmail').textContent = user.email;
-        document.getElementById('displayPhone').textContent = userData.phoneNum || 'N/A';
+        document.getElementById("displayName").textContent = `${userData.fName} ${userData.sName}`;
+        document.getElementById("displayEmail").textContent = user.email;
+        document.getElementById("displayPhone").textContent = userData.phoneNum || "N/A";
 
-        // Load bookings
         const bookingsQuery = query(collection(db, "Booking"), where("guestID", "==", user.uid));
         const bookingsSnapshot = await getDocs(bookingsQuery);
-        const bookingsList = document.getElementById('bookingsList');
-        bookingsList.innerHTML = '';
+        const bookingsList = document.getElementById("bookingsList");
+        bookingsList.innerHTML = "";
 
         if (bookingsSnapshot.empty) {
             bookingsList.innerHTML = '<p class="no-bookings">No upcoming bookings found</p>';
             return;
         }
 
-        // Sort bookings
         const bookingsDocs = bookingsSnapshot.docs.map(d => ({ id: d.id, ...d.data() }));
         bookingsDocs.sort((a, b) => new Date(a.checkInDate) - new Date(b.checkInDate));
 
@@ -92,43 +99,37 @@ onAuthStateChanged(auth, async (user) => {
                 const roomData = roomDoc.data();
                 const typeDoc = await getDoc(doc(db, "RoomType", roomData.type));
                 const typeData = typeDoc.data();
-
-                const bookingCard = createBookingCard(
-                    booking,
-                    roomData.type,
-                    typeData,
-                    booking.id
-                );
+                const bookingCard = createBookingCard(booking, roomData.type, typeData, booking.id);
                 bookingsList.appendChild(bookingCard);
             } catch (error) {
-                console.error("Error processing booking:", error);
+                console.error("Error loading booking info:", error);
             }
         }
 
     } catch (error) {
         console.error("Error loading profile:", error);
-        bookingsList.innerHTML = '<p class="error-msg">Error loading bookings. Please refresh.</p>';
+        document.getElementById("bookingsList").innerHTML = '<p class="error-msg">Error loading bookings. Please refresh.</p>';
     }
 });
 
 function createBookingCard(booking, roomType, typeData, bookingId) {
     const status = booking.status.toLowerCase();
-    let buttons = `<button class="cancel-btn" onclick="cancelBooking('${bookingId}', '${status}')">
-                        Cancel Booking
-                   </button>`;
-
+    let buttons = `<button class="cancel-btn" onclick="cancelBooking('${bookingId}', '${status}')">Cancel Booking</button>`;
     if (status === 'pending') {
-        buttons += `<button class="pay-btn" onclick="showPaymentModal('${bookingId}', ${typeData.price}, ${calculateNights(booking)})">
-                        Pay Now (€${typeData.price * calculateNights(booking)})
-                    </button>`;
+        const total = typeData.price * calculateNights(booking);
+        buttons += `<button class="pay-btn" onclick="showPaymentModal('${bookingId}', ${typeData.price}, ${calculateNights(booking)})">Pay Now (€${total})</button>`;
+    } else if (status === 'checkedin') {
+        buttons += `<button class="edit-extras-btn" onclick="showExtrasModal('${bookingId}')">Edit Extras</button>`;
     }
-    else if (status === 'checkedin') {
-        buttons += `<button class="edit-extras-btn" onclick="showExtrasModal('${bookingId}')">
-                        Edit Extras
-                    </button>`;
-    }
-    
-    const card = document.createElement('div');
+
+    const amenitiesHTML = typeData.amenities.map(amenity => `
+        <li>
+            <img src="${getAmenityIcon(amenity)}" class="amenity-icon" alt="${amenity}">
+            ${amenity}
+        </li>
+    `).join("");
+
+    const card = document.createElement("div");
     card.className = `booking-card ${status}`;
     card.innerHTML = `
         <div class="booking-image-container">
@@ -138,14 +139,7 @@ function createBookingCard(booking, roomType, typeData, bookingId) {
             <h3 class="booking-type">${roomType} Room (Booking #${bookingId})</h3>
             <p class="booking-dates">${formatDate(booking.checkInDate)} - ${formatDate(booking.checkOutDate)}</p>
             <div class="booking-status ${status}">${status.toUpperCase()}</div>
-            <ul class="amenities-list">
-                ${typeData.amenities.map(amenity => `
-                    <li>
-                        <img src="${getAmenityIcon(amenity)}" class="amenity-icon" alt="${amenity}">
-                        ${amenity}
-                    </li>
-                `).join('')}
-            </ul>
+            <ul class="amenities-list">${amenitiesHTML}</ul>
             ${buttons}
         </div>
     `;
@@ -160,27 +154,8 @@ function calculateNights(booking) {
 
 function formatDate(dateString) {
     const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', { 
-        month: 'short', 
-        day: 'numeric', 
-        year: 'numeric' 
-    });
+    return date.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
 }
-
-function getAmenityIcon(amenity) {
-    const name = amenity.toLowerCase();
-    const icons = {
-        wifi: 'images/icon_wifi.png',
-        tv: 'images/icon_tv.png',
-        'mini-bar': 'images/icon_minibar.jpg',
-        'room service': 'images/icon_service.jpg',
-        'air conditioning': 'images/icon_aircon.png',
-        crib: 'images/icon_crib.png',
-        towels: 'images/icon_towels.png'
-    };
-    return icons[name] || 'images/icon_amenity.png';
-}
-
 // ----------------- Extras Functions -----------------
 window.showExtrasModal = async function(bookingId) {
     currentExtrasBooking = { 
@@ -193,14 +168,11 @@ window.showExtrasModal = async function(bookingId) {
     extrasForm.innerHTML = '<h3>Select Extras</h3>';
 
     try {
-        // Get available extras from Firebase
         const extrasSnapshot = await getDocs(collection(db, "Extras"));
         const bookingDoc = await getDoc(doc(db, "Booking", bookingId));
-        
         if (!bookingDoc.exists()) return;
         const currentExtras = bookingDoc.data().extras || [];
 
-        // Create checkbox for each extra
         extrasSnapshot.forEach((doc) => {
             const extra = doc.data();
             const div = document.createElement('div');
@@ -210,14 +182,13 @@ window.showExtrasModal = async function(bookingId) {
                        name="extras" 
                        value="${extra.name}" 
                        data-price="${extra.price}"
-                       ${currentExtras.includes(extra.name) ? 'checked' : ''}
+                       ${currentExtras.includes(extra.name) ? 'checked' : ''} 
                        ${currentExtras.includes(extra.name) ? 'disabled' : ''}>
                 <label for="extra_${doc.id}">${extra.name} (€${extra.price})</label>
             `;
             extrasForm.appendChild(div);
         });
 
-        // Add total display and button
         const totalDiv = document.createElement('div');
         totalDiv.innerHTML = `
             <p>Total Extras Cost: €<span id="extrasTotal">0.00</span></p>
@@ -225,11 +196,9 @@ window.showExtrasModal = async function(bookingId) {
         `;
         extrasForm.appendChild(totalDiv);
 
-        // Calculate initial total
         window.calculateExtras();
         extrasModal.style.display = 'block';
 
-        // Add event listeners
         const checkboxes = extrasForm.querySelectorAll('input[name="extras"]');
         checkboxes.forEach(checkbox => {
             checkbox.addEventListener('change', window.calculateExtras);
@@ -261,11 +230,8 @@ window.calculateExtras = function() {
 
 window.saveExtras = async function() {
     try {
-        // Get existing extras to preserve disabled ones
         const bookingDoc = await getDoc(doc(db, "Booking", currentExtrasBooking.id));
         const existingExtras = bookingDoc.data().extras || [];
-        
-        // Merge new selections with existing extras
         const allExtras = [...existingExtras, ...currentExtrasBooking.extras];
         
         await updateDoc(doc(db, "Booking", currentExtrasBooking.id), {
@@ -282,7 +248,7 @@ window.saveExtras = async function() {
     }
 };
 
-// ----------------- Remaining Functions -----------------
+// ----------------- Payment Functions -----------------
 window.showPaymentModal = function(bookingId, price, nights) {
     currentPaymentBooking = {
         id: bookingId,
@@ -298,10 +264,7 @@ window.submitPayment = async function() {
         const button = document.querySelector('.payment-submit-btn');
         originalText = button.innerHTML;
         
-        button.innerHTML = `
-            <div class="loading-spinner"></div>
-            Processing Payment...
-        `;
+        button.innerHTML = `<div class="loading-spinner"></div> Processing Payment...`;
         button.disabled = true;
 
         const paymentDetails = {
@@ -334,7 +297,7 @@ window.submitPayment = async function() {
         await updateDoc(doc(db, "Booking", currentPaymentBooking.id), {
             status: 'booked'
         });
-        alert('✅ Payment successful!\nBooking confirmed as "booked".');
+        alert('✅ Payment successful! Booking confirmed as "booked".');
         location.reload();
     } catch (error) {
         alert(`❌ Payment failed: ${error.message}`);
@@ -346,6 +309,7 @@ window.submitPayment = async function() {
     }
 };
 
+// ----------------- Cancel Booking Function -----------------
 window.cancelBooking = async (bookingId, status) => {
     const message = status === 'booked' ? 
         'Cancel this booked reservation?' : 
@@ -363,6 +327,7 @@ window.cancelBooking = async (bookingId, status) => {
     }
 };
 
+// ----------------- Password and Verification Functions -----------------
 window.togglePassword = async () => {
     currentAction = 'showPassword';
     codeModal.style.display = 'block';

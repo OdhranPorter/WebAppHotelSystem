@@ -1,5 +1,3 @@
-/* employee.css */
-
 /* Reset */
 * {
   margin: 0;
@@ -231,10 +229,11 @@ h1 {
   cursor: pointer;
 }
 
-/* Forms */
+/* Forms (Common) */
 #amenityForm input,
 #editTypeForm input,
-#editTypeForm select {
+#editTypeForm select,
+#addExtraForm input {
   display: block;
   width: 100%;
   margin-bottom: 1rem;
@@ -244,7 +243,8 @@ h1 {
 }
 
 #amenityForm button,
-#editTypeForm button {
+#editTypeForm button,
+#addExtraForm button {
   padding: 0.5rem 1rem;
   cursor: pointer;
   background-color: #4CAF50;
@@ -255,7 +255,8 @@ h1 {
 }
 
 #amenityForm button:hover,
-#editTypeForm button:hover {
+#editTypeForm button:hover,
+#addExtraForm button:hover {
   background-color: #45a049;
 }
 
@@ -379,16 +380,103 @@ table tbody td {
   border: 1px solid #ddd;
 }
 
-/* Add to room-status classes */
+/* Room Status Variations */
 .room-status.unavailable {
   background-color: #d9d9d9;
   color: #666;
 }
 
-/* Add maintenance button styles */
+/* Maintenance Button Styles */
 .action-btn.maintenance {
   background-color: #ff9800;
   padding: 0.4rem 0.8rem;
   border-radius: 4px;
   font-size: 0.85rem;
+}
+
+/* Extras Section Specific Styles */
+/* Extras list grid */
+#extrasList {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+/* Extras card style matching other room-type cards */
+#extrasList .room-type-card {
+  background: #fff;
+  border-radius: 8px;
+  box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+  padding: 1rem;
+  text-align: center;
+}
+
+/* Extras form styling */
+#addExtraForm {
+  margin-bottom: 1rem;
+}
+
+#addExtraForm input {
+  margin-bottom: 0.75rem;
+  padding: 0.5rem;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+}
+
+#addExtraForm button {
+  background-color: #007bff;
+  color: #fff;
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+#addExtraForm button:hover {
+  background-color: #0069d9;
+}
+
+/* New button styles for Extras cards */
+.edit-extra-btn,
+.delete-extra-btn {
+  padding: 0.4rem 0.8rem;
+  font-size: 0.85rem;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.edit-extra-btn {
+  background-color: #4CAF50;
+  color: white;
+}
+
+.delete-extra-btn {
+  background-color: #dc3545;
+  color: white;
+  margin-left: 0.5rem;
+}
+
+.edit-extra-btn:hover {
+  background-color: #45a049;
+}
+
+.delete-extra-btn:hover {
+  background-color: #c82333;
+}
+
+/* Footer Style */
+footer {
+  background-color: #111213;
+  color: white;
+  text-align: center;
+  padding: 15px 0;
+  position: fixed;
+  width: 100%;
+  bottom: 0;
+  left: 0;
+  font-size: 14px;
+  margin-top: auto;
 }

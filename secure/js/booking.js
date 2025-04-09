@@ -36,17 +36,13 @@ const closeModalBtn = bankDetailsModal.querySelector(".close");
 
 // Global variables
 let roomPrice = 0;
+let pendingBookingData = null;  // Holds pending booking details
 const urlParams = new URLSearchParams(window.location.search);
 const roomType = urlParams.get("roomType");
 let selectedRoomId = null;
 let currentBookingId = null;
 
 onAuthStateChanged(auth, async (user) => {
-  if (!user) {
-    window.location.href = `login?from=booking?roomType=${encodeURIComponent(roomType)}`;
-    return;
-  }
-
   if (!roomType) {
     alert("No room type selected!");
     window.location.href = "rooms";
@@ -107,13 +103,25 @@ onAuthStateChanged(auth, async (user) => {
         }
       }
     });
+
+    // Check if there is a pending booking from a previous login redirect
+    const storedPendingBooking = localStorage.getItem("pendingBookingData");
+    if (storedPendingBooking && user) {
+      pendingBookingData = JSON.parse(storedPendingBooking);
+      // Now that the user is logged in, add the guestID
+      pendingBookingData.guestID = auth.currentUser.uid;
+      currentBookingId = pendingBookingData.bookID;
+      localStorage.removeItem("pendingBookingData");
+      // Immediately show bank details modal to continue payment.
+      bankDetailsModal.style.display = "block";
+    }
   } catch (error) {
     console.error("Error initializing booking:", error);
   }
 });
 
+// (Card type detection and input formatting functions remain unchanged)
 
-// Add these card type detection functions
 function detectCardType(number) {
   const cleaned = number.replace(/\s/g, '');
   const patterns = {
@@ -135,17 +143,14 @@ function updateCardTypeIcon(number) {
   icon.style.backgroundImage = `url(images/${type}.png)`;
   icon.style.display = type === 'unknown' ? 'none' : 'block';
   
-  // Update CVV max length for Amex
   const cvvField = document.getElementById('cvv');
   cvvField.maxLength = type === 'amex' ? 4 : 3;
 }
 
-// Add input formatting handlers
 document.getElementById('cardNumber')?.addEventListener('input', function(e) {
   let value = e.target.value.replace(/\s/g, '');
   if (isNaN(value)) return;
   
-  // Format with spaces every 4 digits
   value = value.match(/.{1,4}/g)?.join(' ').substr(0, 19) || '';
   e.target.value = value;
   updateCardTypeIcon(value);
@@ -159,7 +164,6 @@ document.getElementById('expiryDate')?.addEventListener('input', function(e) {
   e.target.value = value.substring(0, 5);
 });
 
-// Enhanced validation function
 function validatePaymentDetails() {
   let isValid = true;
   const errors = {
@@ -169,21 +173,18 @@ function validatePaymentDetails() {
     cvvError: ''
   };
 
-  // Cardholder Name validation
   const cardHolderName = document.getElementById('cardHolderName').value.trim();
   if (!cardHolderName || !/^[a-zA-Z ]+$/.test(cardHolderName)) {
     errors.nameError = 'Please enter a valid name';
     isValid = false;
   }
 
-  // Card Number validation
   const cardNumber = document.getElementById('cardNumber').value.replace(/\s/g, '');
   if (!/^\d{16}$/.test(cardNumber)) {
     errors.numberError = 'Invalid card number';
     isValid = false;
   }
 
-  // Expiry Date validation
   const expiryDate = document.getElementById('expiryDate').value;
   const [month, year] = expiryDate.split('/');
   if (!/^(0[1-9]|1[0-2])\/\d{2}$/.test(expiryDate)) {
@@ -192,14 +193,12 @@ function validatePaymentDetails() {
   } else {
     const currentYear = new Date().getFullYear() % 100;
     const currentMonth = new Date().getMonth() + 1;
-    if (parseInt(year) < currentYear || 
-       (parseInt(year) === currentYear && parseInt(month) < currentMonth)) {
+    if (parseInt(year) < currentYear || (parseInt(year) === currentYear && parseInt(month) < currentMonth)) {
       errors.expiryError = 'Card has expired';
       isValid = false;
     }
   }
 
-  // CVV validation
   const cvv = document.getElementById('cvv').value;
   const cardType = detectCardType(cardNumber);
   const cvvValidLength = cardType === 'amex' ? 4 : 3;
@@ -208,7 +207,6 @@ function validatePaymentDetails() {
     isValid = false;
   }
 
-  // Display errors
   Object.entries(errors).forEach(([id, message]) => {
     const errorElement = document.getElementById(id);
     errorElement.textContent = message;
@@ -218,7 +216,53 @@ function validatePaymentDetails() {
   return isValid;
 }
 
-// Update payment handler
+// --- Updated Confirm Booking Handler ---
+confirmBookingBtn?.addEventListener("click", async () => {
+  const fpInstance = datePickerInput._flatpickr;
+  if (!selectedRoomId || !fpInstance || fpInstance.selectedDates.length !== 2) {
+    alert("Please select valid dates first");
+    return;
+  }
+  
+  // Generate pending booking details from selected dates and room info.
+  try {
+    const startDate = fpInstance.selectedDates[0];
+    const endDate = fpInstance.selectedDates[1];
+    const nights = Math.ceil((endDate - startDate) / (1000 * 3600 * 24));
+    const totalCost = nights * roomPrice;
+
+    // Generate booking ID regardless of login state.
+    const bookingId = await getNextBookingId();
+    const bookingIdStr = `B${bookingId}`;
+    currentBookingId = bookingIdStr;
+    
+    pendingBookingData = {
+      bookID: bookingIdStr,
+      roomID: selectedRoomId,
+      checkInDate: fpInstance.formatDate(startDate, "Y-m-d"),
+      checkOutDate: fpInstance.formatDate(endDate, "Y-m-d"),
+      status: "booked",
+      total: totalCost,
+      timestamp: new Date()
+    };
+
+    if (!auth.currentUser) {
+      // Store pending booking info and redirect to login.
+      localStorage.setItem("pendingBookingData", JSON.stringify(pendingBookingData));
+      window.location.href = `login?redirect=${encodeURIComponent(window.location.href)}`;
+      return;
+    } else {
+      // If logged in, add guestID.
+      pendingBookingData.guestID = auth.currentUser.uid;
+      bankDetailsModal.style.display = "block";
+    }
+  } catch (error) {
+    console.error("Booking preparation failed:", error);
+    alert(`Booking preparation failed: ${error.message}`);
+  }
+});
+
+// --- Combined Payment Handler for Bank Details ---
 submitBankDetailsBtn?.addEventListener("click", async (e) => {
   e.preventDefault();
   
@@ -232,13 +276,17 @@ submitBankDetailsBtn?.addEventListener("click", async (e) => {
   };
 
   try {
+    // Save the booking data (now that payment details are confirmed)
+    await setDoc(doc(db, "Booking", currentBookingId), pendingBookingData);
+
+    // Then save payment details using the same booking ID
     await setDoc(doc(db, "Payments", currentBookingId), {
       bookingID: currentBookingId,
       guestID: auth.currentUser.uid,
       ...paymentData,
       timestamp: new Date()
     });
-    
+
     alert("Payment successful!");
     bankDetailsModal.style.display = "none";
     window.location.href = "profile";
@@ -248,9 +296,9 @@ submitBankDetailsBtn?.addEventListener("click", async (e) => {
   }
 });
 
+// --- Utility Functions (remain unchanged) ---
 async function getFullyBookedDates(roomType) {
   const fullyBookedDates = [];
-  // Filter for available rooms only
   const roomsQuery = query(
     collection(db, "Room"),
     where("type", "==", roomType),
@@ -293,7 +341,6 @@ async function getFullyBookedDates(roomType) {
   return fullyBookedDates;
 }
 
-
 async function findAvailableRoom(roomType, selectedDates) {
   const [startDate, endDate] = selectedDates;
   const roomsQuery = query(collection(db, "Room"), where("type", "==", roomType));
@@ -328,48 +375,6 @@ async function isRoomAvailable(roomId, startDate, endDate) {
   return true;
 }
 
-// Confirm booking handler
-confirmBookingBtn?.addEventListener("click", async () => {
-  const fpInstance = datePickerInput._flatpickr;
-  if (!selectedRoomId || !fpInstance || fpInstance.selectedDates.length !== 2) {
-    alert("Please select valid dates first");
-    return;
-  }
-
-  try {
-    const startDate = fpInstance.selectedDates[0];
-    const endDate = fpInstance.selectedDates[1];
-    const nights = Math.ceil((endDate - startDate) / (1000 * 3600 * 24));
-    const totalCost = nights * roomPrice;
-
-    const isAvailable = await isRoomAvailable(selectedRoomId, startDate, endDate);
-    if (!isAvailable) {
-      alert("Room no longer available");
-      return;
-    }
-
-    const bookingId = await getNextBookingId();
-    const bookingIdStr = `B${bookingId}`;
-    currentBookingId = bookingIdStr;
-
-    await setDoc(doc(db, "Booking", bookingIdStr), {
-      bookID: bookingIdStr,
-      guestID: auth.currentUser.uid,
-      roomID: selectedRoomId,
-      checkInDate: fpInstance.formatDate(startDate, "Y-m-d"),
-      checkOutDate: fpInstance.formatDate(endDate, "Y-m-d"),
-      status: "booked",
-      total: totalCost,
-      timestamp: new Date()
-    });
-
-    bankDetailsModal.style.display = "block";
-  } catch (error) {
-    console.error("Booking failed:", error);
-    alert(`Booking failed: ${error.message}`);
-  }
-});
-
 async function getNextBookingId() {
   const counterRef = doc(db, "Counters", "bookingCounter");
   return runTransaction(db, async (transaction) => {
@@ -383,37 +388,6 @@ async function getNextBookingId() {
     return newCount;
   });
 }
-
-// Payment handling
-submitBankDetailsBtn?.addEventListener("click", async () => {
-  const cardHolderName = document.getElementById("cardHolderName").value;
-  const cardNumber = document.getElementById("cardNumber").value;
-  const expiryDate = document.getElementById("expiryDate").value;
-  const cvv = document.getElementById("cvv").value;
-
-  if (!cardHolderName || !cardNumber || !expiryDate || !cvv) {
-    alert("Please fill all payment fields");
-    return;
-  }
-
-  try {
-    await setDoc(doc(db, "Payments", currentBookingId), {
-      bookingID: currentBookingId,
-      guestID: auth.currentUser.uid,
-      cardHolderName,
-      cardNumber,
-      expiryDate,
-      cvv,
-      timestamp: new Date()
-    });
-    alert("Payment successful!");
-    bankDetailsModal.style.display = "none";
-    window.location.href = "profile";
-  } catch (error) {
-    console.error("Payment failed:", error);
-    alert("Payment failed: " + error.message);
-  }
-});
 
 // Modal controls
 closeModalBtn?.addEventListener("click", () => {

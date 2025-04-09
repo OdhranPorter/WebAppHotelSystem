@@ -1,5 +1,3 @@
-// rooms.js
-
 import { 
   initializeApp 
 } from "https://www.gstatic.com/firebasejs/11.3.0/firebase-app.js";
@@ -23,7 +21,7 @@ const firebaseConfig = {
   apiKey: "AIzaSyDw5aeA0uwE7R06Ht1wjkx6TcehPWs0Hac",
   authDomain: "hotel-booking-3aad3.firebaseapp.com",
   projectId: "hotel-booking-3aad3",
-  storageBucket: "hotel-booking-3aad3.firebasestorage.app",
+  storageBucket: "hotel-booking-3aad3.firebaseapp.com",
   messagingSenderId: "385718256742",
   appId: "1:385718256742:web:03fc7761dbf7e7345ad9a7"
 };
@@ -32,13 +30,41 @@ const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 const auth = getAuth(app);
 
-/***************************************************
- * Show/Hide nav items based on auth state
- ***************************************************/
 document.addEventListener("DOMContentLoaded", async () => {
   console.log("rooms.js loaded");
 
-  // Nav elements
+  // Global dictionary to cache amenity images
+  let amenityImages = {};
+
+  // ---------------------------
+  // Preload Amenity Images
+  // ---------------------------
+  async function loadAmenityImages() {
+    try {
+      const amenitySnapshot = await getDocs(collection(db, "Amenity"));
+      amenitySnapshot.forEach(docSnap => {
+        const data = docSnap.data();
+        if (data.image) {
+          // Check if the stored value already starts with "data:"; if not, prepend the prefix.
+          const imageUrl = data.image.startsWith("data:")
+            ? data.image
+            : "data:image/png;base64," + data.image;
+          // Store key in lower-case for consistency.
+          amenityImages[docSnap.id.toLowerCase()] = imageUrl;
+        }
+      });
+      console.log("Amenity images loaded:", amenityImages);
+    } catch (error) {
+      console.error("Error loading amenity images:", error);
+    }
+  }
+
+  // Wait for amenity images to load before proceeding
+  await loadAmenityImages();
+
+  // ---------------------------
+  // Handle Auth UI Logic
+  // ---------------------------
   const accountDropdown = document.getElementById("accountDropdown");
   const accountBtn      = document.getElementById("accountBtn");
   const accountMenu     = document.getElementById("accountMenu");
@@ -63,19 +89,17 @@ document.addEventListener("DOMContentLoaded", async () => {
   // Watch auth state
   onAuthStateChanged(auth, (user) => {
     if (user) {
-      // Logged in => show account, hide login
       if (accountDropdown) accountDropdown.style.display = "inline-block";
       if (loginBtn)        loginBtn.style.display = "none";
     } else {
-      // Not logged in => hide account, show login
       if (accountDropdown) accountDropdown.style.display = "none";
       if (loginBtn)        loginBtn.style.display = "inline-block";
     }
   });
 
-  /***************************************************
-   * 4. FETCH & DISPLAY ROOM TYPES
-   ***************************************************/
+  // ---------------------------
+  // FETCH & DISPLAY ROOM TYPES
+  // ---------------------------
   const roomsContainer = document.getElementById("roomsContainer");
   try {
     // Fetch all room types
@@ -115,12 +139,12 @@ document.addEventListener("DOMContentLoaded", async () => {
       carousel.appendChild(prevButton);
       carousel.appendChild(nextButton);
 
-      // Build amenities list
+      // Build amenities list using the fetched amenity images
       const amenitiesList = typeData.amenities.map((amenity) => {
-        const icon = getAmenityIcon(amenity);
+        const iconSrc = getAmenityIcon(amenity);
         return `
           <li>
-            <img src="${icon}" alt="${amenity}" class="amenity-icon" />
+            <img src="${iconSrc}" alt="${amenity}" class="amenity-icon" />
             <span>${amenity}</span>
           </li>
         `;
@@ -143,13 +167,7 @@ document.addEventListener("DOMContentLoaded", async () => {
       // Book Now action
       const bookBtn = card.querySelector(".book-now-btn");
       bookBtn.addEventListener("click", () => {
-        const user = auth.currentUser;
-        if (!user) {
-          const redirectUrl = `booking?roomType=${encodeURIComponent(roomType)}`;
-          window.location.href = `login?redirect=${encodeURIComponent(redirectUrl)}`;
-        } else {
-          window.location.href = `booking?roomType=${encodeURIComponent(roomType)}`;
-        }
+        window.location.href = `booking?roomType=${encodeURIComponent(roomType)}`;
       });
 
       roomsContainer.appendChild(card);
@@ -158,41 +176,32 @@ document.addEventListener("DOMContentLoaded", async () => {
     console.error("Error fetching room types:", error);
     roomsContainer.innerHTML = "<p>Failed to load rooms. Please try again later.</p>";
   }
-});
 
-/***************************************************
- * HELPER FUNCTIONS
- ***************************************************/
-function getAmenityIcon(amenity) {
-  const name = amenity.toLowerCase();
-  if (name.includes("wi-fi") || name.includes("wifi")) return "images/icon_wifi.png";
-  if (name.includes("tv")) return "images/icon_tv.png";
-  if (name.includes("mini-bar") || name.includes("mini bar")) return "images/icon_minibar.jpg";
-  if (name.includes("room service")) return "images/icon_service.jpg";
-  if (name.includes("air conditioning") || name.includes("aircon")) return "images/icon_aircon.png";
-  if (name.includes("crib")) return "images/icon_crib.png";
-  if (name.includes("towels")) return "images/icon_towels.png";
-  return "images/icon_amenity.png";
-}
-
-// Carousel navigation logic
-function navigateCarousel(carousel, direction) {
-  const images = carousel.querySelectorAll(".carousel-image");
-  let currentIndex = 0;
-
-  // Find the currently visible image
-  images.forEach((img, index) => {
-    if (img.style.display === "block") {
-      currentIndex = index;
-      img.style.display = "none"; // Hide current image
+  // ---------------------------
+  // HELPER FUNCTIONS
+  // ---------------------------
+  // Updated getAmenityIcon to use lower-case keys and an absolute fallback URL.
+  function getAmenityIcon(amenity) {
+    const key = amenity.toLowerCase();
+    if (amenityImages[key]) {
+      return amenityImages[key];
     }
-  });
+    return "/images/icon_amenity.png";
+  }
 
-  // Calculate the next image index
-  let nextIndex = currentIndex + direction;
-  if (nextIndex >= images.length) nextIndex = 0; // Loop to first image
-  if (nextIndex < 0) nextIndex = images.length - 1; // Loop to last image
-
-  // Show the next image
-  images[nextIndex].style.display = "block";
-}
+  // Carousel navigation logic
+  function navigateCarousel(carousel, direction) {
+    const images = carousel.querySelectorAll(".carousel-image");
+    let currentIndex = 0;
+    images.forEach((img, index) => {
+      if (img.style.display === "block") {
+        currentIndex = index;
+        img.style.display = "none";
+      }
+    });
+    let nextIndex = currentIndex + direction;
+    if (nextIndex >= images.length) nextIndex = 0;
+    if (nextIndex < 0) nextIndex = images.length - 1;
+    images[nextIndex].style.display = "block";
+  }
+});

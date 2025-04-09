@@ -103,11 +103,7 @@
     </div>
   </main>
 
-  <!-- Modals remain same as before -->
-  <script type="module" src="js/employee.js"></script>
-</body>
-</html>
-  
+  <!-- Modals -->
   <!-- Edit Extra Modal -->
   <div id="editExtraModal" class="modal">
     <div class="modal-content">
@@ -125,6 +121,26 @@
       </form>
     </div>
   </div>
+
+  <!-- Edit Room Type Modal -->
+  <div id="editTypeModal" class="modal">
+    <div class="modal-content">
+      <span class="close">&times;</span>
+      <h2>Edit Room Type</h2>
+      <form id="editTypeForm">
+        <input type="text" id="editTypeName" placeholder="Room Type Name" required>
+        <input type="number" id="editTypePrice" placeholder="Price" required step="0.01">
+        <div id="editTypeAmenities"></div>
+        <input type="file" id="editTypeImages" accept="image/*" multiple>
+        <div id="editTypeImagePreview"></div>
+        <button type="submit">Update</button>
+      </form>
+    </div>
+  </div>
+
+  <footer>
+    <p>© 2025 MyHotel. All rights reserved.</p>
+  </footer>
 
   <script type="module" src="js/employee.js"></script>
 </body>
