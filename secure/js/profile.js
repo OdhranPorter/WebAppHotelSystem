@@ -32,6 +32,25 @@ const auth = getAuth(app);
 const db = getFirestore(app);
 const amenityImages = {}; // Global cache
 
+const extrasModal = document.getElementById('extrasModal');
+const codeModal = document.getElementById('codeModal');
+const passwordModal = document.getElementById('passwordModal');
+const paymentModal = document.getElementById('paymentModal');
+let currentExtrasBooking = null;
+
+// Modal close handlers
+document.querySelectorAll('.modal .close').forEach(closeBtn => {
+    closeBtn.onclick = () => {
+        closeBtn.closest('.modal').style.display = 'none';
+    }
+});
+
+window.onclick = (event) => {
+    if (event.target.classList.contains('modal')) {
+        event.target.style.display = 'none';
+    }
+};
+
 // Updated: When loading amenity icons, check if data.image already starts with "data:".
 // Also, keys are stored in lower-case.
 async function loadAmenityIcons() {
