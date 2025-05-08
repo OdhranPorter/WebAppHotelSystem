@@ -36,7 +36,7 @@ import {
 
 import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/11.3.0/firebase-storage.js";
 
-// REPLACE with your actual config
+
 const firebaseConfig = {
   apiKey: "AIzaSyDw5aeA0uwE7R06Ht1wjkx6TcehPWs0Hac",
   authDomain: "hotel-booking-3aad3.firebaseapp.com",

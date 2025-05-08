@@ -15,7 +15,7 @@ import {
   deleteDoc
 } from "https://www.gstatic.com/firebasejs/11.3.0/firebase-firestore.js";
 
-// Your Firebase config
+
 const firebaseConfig = {
   apiKey: "AIzaSyDw5aeA0uwE7R06Ht1wjkx6TcehPWs0Hac",
   authDomain: "hotel-booking-3aad3.firebaseapp.com",
