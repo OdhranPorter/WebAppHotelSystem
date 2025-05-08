@@ -414,3 +414,26 @@ footer {
     font-size: 14px;
     margin-top: auto;
   }
+
+  /* Extras Modal Styling */
+#extrasModal .modal-content {
+    max-width: 500px;
+    padding: 2rem;
+}
+
+#extrasForm label {
+    display: block;
+    margin: 10px 0;
+    padding: 10px;
+    background: #f5f5f5;
+    border-radius: 4px;
+}
+
+#extrasForm input[type="checkbox"] {
+    margin-right: 10px;
+}
+
+#extrasTotal {
+    font-weight: bold;
+    color: #2c3e50;
+}

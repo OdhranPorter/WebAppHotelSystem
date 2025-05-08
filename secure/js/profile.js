@@ -187,37 +187,51 @@ window.showExtrasModal = async function(bookingId) {
     extrasForm.innerHTML = '<h3>Select Extras</h3>';
 
     try {
+        // Get all available extras from Firebase
         const extrasSnapshot = await getDocs(collection(db, "Extras"));
         const bookingDoc = await getDoc(doc(db, "Booking", bookingId));
+        
         if (!bookingDoc.exists()) return;
         const currentExtras = bookingDoc.data().extras || [];
 
-        extrasSnapshot.forEach((doc) => {
-            const extra = doc.data();
+        // Clear previous content
+        extrasForm.innerHTML = '<h3>Select Extras</h3>';
+
+        // Create checkbox for each extra
+        extrasSnapshot.forEach((extraDoc) => {
+            const extra = extraDoc.data();
             const div = document.createElement('div');
             div.innerHTML = `
-                <input type="checkbox" 
-                       id="extra_${doc.id}" 
-                       name="extras" 
-                       value="${extra.name}" 
-                       data-price="${extra.price}"
-                       ${currentExtras.includes(extra.name) ? 'checked' : ''} 
-                       ${currentExtras.includes(extra.name) ? 'disabled' : ''}>
-                <label for="extra_${doc.id}">${extra.name} (€${extra.price})</label>
+                <label>
+                    <input type="checkbox" 
+                           name="extras" 
+                           value="${extra.name}" 
+                           data-price="${extra.price}"
+                           ${currentExtras.includes(extra.name) ? 'checked disabled' : ''}>
+                    ${extra.name} (€${extra.price})
+                </label>
             `;
             extrasForm.appendChild(div);
         });
 
-        const totalDiv = document.createElement('div');
-        totalDiv.innerHTML = `
-            <p>Total Extras Cost: €<span id="extrasTotal">0.00</span></p>
-            <button type="button" onclick="saveExtras()">Save Extras</button>
+        // Add total and submit section
+        const totalSection = document.createElement('div');
+        totalSection.innerHTML = `
+            <div style="margin-top: 20px;">
+                <p>Total Extras: €<span id="extrasTotal">0.00</span></p>
+                <button type="button" onclick="saveExtras()" 
+                        style="margin-top: 10px; padding: 8px 16px;">
+                    Save Changes
+                </button>
+            </div>
         `;
-        extrasForm.appendChild(totalDiv);
+        extrasForm.appendChild(totalSection);
 
+        // Initialize calculation
         window.calculateExtras();
         extrasModal.style.display = 'block';
 
+        // Add event listeners to checkboxes
         const checkboxes = extrasForm.querySelectorAll('input[name="extras"]');
         checkboxes.forEach(checkbox => {
             checkbox.addEventListener('change', window.calculateExtras);
@@ -249,13 +263,21 @@ window.calculateExtras = function() {
 
 window.saveExtras = async function() {
     try {
-        const bookingDoc = await getDoc(doc(db, "Booking", currentExtrasBooking.id));
-        const existingExtras = bookingDoc.data().extras || [];
-        const allExtras = [...existingExtras, ...currentExtrasBooking.extras];
+        const bookingRef = doc(db, "Booking", currentExtrasBooking.id);
+        const bookingSnap = await getDoc(bookingRef);
         
-        await updateDoc(doc(db, "Booking", currentExtrasBooking.id), {
+        if (!bookingSnap.exists()) {
+            alert("Booking not found!");
+            return;
+        }
+
+        // Merge new extras with existing ones
+        const existingExtras = bookingSnap.data().extras || [];
+        const allExtras = [...new Set([...existingExtras, ...currentExtrasBooking.extras])];
+        
+        await updateDoc(bookingRef, {
             extras: allExtras,
-            extrasCost: currentExtrasBooking.extrasCost
+            extrasCost: parseFloat(bookingSnap.data().extrasCost || 0) + currentExtrasBooking.extrasCost
         });
         
         alert("Extras updated successfully!");
