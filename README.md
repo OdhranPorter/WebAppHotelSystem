@@ -1,25 +1,45 @@
-Full-Stack Hotel Management System
+# 🏨 Full-Stack Hotel Management System
 
-This is a full-stack web application for a hotel, providing a complete booking and management solution. It features a customer-facing portal for booking rooms and an internal admin/employee system for managing rooms and guest check-ins.
+A complete **full-stack web application** for a hotel, providing an all-in-one solution for **room booking, guest management, and admin control**.  
 
-Features
+This project includes a **customer-facing portal** for seamless booking and an **internal admin/employee system** for room and guest management.  
 
-🏨 Customer Portal: Users can browse all available room types, view dynamic details (amenities, size, price), and book their stay.
 
-💳 Booking System: A complete booking process with client-side form and card validation.
+---
 
-🔒 Admin CRUD Panel: A secure admin interface with full Create, Read, Update, and Delete (CRUD) capabilities for managing hotel room listings.
+## 🚀 Features
 
-🧑‍💼 Employee Portal: A separate view for hotel staff to access all guest bookings, manage check-ins, and process check-outs.
+### 🧭 Customer Portal
+- Browse all available room types.
+- View dynamic room details — amenities, size, and price.
+- Book rooms directly from the website.
 
-Tech Stack
+### 💳 Booking System
+- End-to-end booking flow.
+- Secure and validated client-side booking form.
+- Integrated card validation for payments.
 
-Frontend: 🎨 HTML, CSS, JavaScript
+### 🔒 Admin CRUD Panel
+- Secure admin authentication.
+- Full **Create, Read, Update, Delete (CRUD)** functionality for:
+  - Room listings
+  - Room details
+  - Pricing and availability
 
-Backend: 💻 Node.js
+### 🧑‍💼 Employee Portal
+- Dedicated staff interface.
+- Access all guest bookings.
+- Manage check-ins and check-outs efficiently.
 
-API Framework: 🚀 Express.js
+---
 
-Database: 🔥 Google Firestore (NoSQL)
+## 🛠️ Tech Stack
 
-Version Control: 🔧 Git & GitHub
+| Layer | Technology |
+|-------|-------------|
+| **Frontend** | 🎨 HTML, CSS, JavaScript |
+| **Backend** | 💻 Node.js |
+| **API Framework** | 🚀 Express.js |
+| **Database** | 🔥 Google Firestore  |
+| **Version Control** | 🔧 Git & GitHub |
+
